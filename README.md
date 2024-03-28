@@ -4,6 +4,7 @@
 # Palettes Used:
 ## Tank:
 ### Main:
+#### Blue:
 ```asm
 0f 11 21 01
 ```
