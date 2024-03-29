@@ -1,5 +1,8 @@
 .include "constants.inc"
 
+.segment "ZEROPAGE"
+.importzp player_x, player_y
+
 .segment "CODE"
 .import main
 .export reset_handler
@@ -18,6 +21,15 @@
 vblankwait:
   BIT $2002
   BPL vblankwait
+
+   ; initialize zero-page values
+  LDA #$80
+  STA player_x
+  LDA #$a0
+  STA player_y
+  LDA #$05
+  STA tile_index
+
 vblankwait2:
   BIT $2002
   BPL vblankwait2
