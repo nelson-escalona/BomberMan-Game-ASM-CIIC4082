@@ -21,3 +21,24 @@
 ```asm
 0f 18 28 08
 ```
+
+# Palettes Used:
+## Stone:
+```asm
+0f 00 10 30
+```
+
+## Brick:
+```asm
+0f 05 16 37
+```
+
+## Bushes:
+```asm
+0f 0B 1A 29
+```
+
+## Wood:
+```asm
+0f 26 36 37
+```
