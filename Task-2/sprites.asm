@@ -2,10 +2,11 @@
 .include "header.inc"
 
 .segment "ZEROPAGE"
+tile_count: .res 1
 tile_index: .res 1
 player_x: .res 1
 player_y: .res 1
-.exportzp player_x, player_y
+.exportzp player_x, player_y, tile_index, tile_count
 
 .segment "CODE"
 .proc irq_handler
@@ -19,7 +20,19 @@ player_y: .res 1
   STA OAMDMA
 
   ; update tiles *after* DMA transfer
+load_sprites:
+  LDA player_y
+  CLC
+  ADC #$10
+  STA player_y
+  LDA player_x
+  CLC
+  ADC #$10
+  STA player_x
   JSR draw_player
+  LDX tile_count
+  CPX #$17
+  BNE load_sprites
 
   LDA #$00
   STA $2005
@@ -67,13 +80,25 @@ forever:
   PHA
   
   ; write player ship tile numbers
-  LDA tile_index
-  STA $0201
+  LDX tile_index
+  STX $0201
+  INX
+  STX $0205
+  INX 
+  STX $0209
+  INX
+  STX $020d
+  INX
+  LDX tile_index
+
 
   ; write player ship tile atributes
   ; use palette 0
   LDA #$00
   STA $0202
+  STA $0206
+  STA $020a
+  STA $020e
 
   ; store tile locations
   ; top left tile:
@@ -108,6 +133,18 @@ forever:
   ADC #$08
   STA $020f
 
+  LDX #$01
+  STX tile_count
+
+  ; LDA player_y
+  ; CLC
+  ; ADC #$10
+  ; STA player_y
+  ; LDA player_x
+  ; CLC
+  ; ADC #$10
+  ; STA player_x
+
   ; restore registers and return
   PLA 
   TYA
@@ -117,17 +154,6 @@ forever:
   PLP 
   RTS 
 .endproc
-
-.proc draw_sprite
-  ; save registers
-  PHP
-  PHA
-  TXA
-  PHA
-  TYA
-  PHA
-
-
 
 .segment "VECTORS"
 .addr nmi_handler, reset_handler, irq_handler
