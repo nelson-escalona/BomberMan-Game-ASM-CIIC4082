@@ -22,7 +22,7 @@
 0f 18 28 08
 ```
 
-# Palettes Used:
+# Background Palettes Used:
 ## Stone:
 ```asm
 0f 00 10 30
