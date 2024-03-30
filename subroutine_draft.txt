@@ -1,0 +1,224 @@
+.include "constants.inc"
+.include "header.inc"
+
+.segment "ZEROPAGE"
+tile_count: .res 1
+tile_index: .res 1
+tile: .res 2
+player_x: .res 1
+player_y: .res 1
+.exportzp player_x, player_y, tile_index, tile_count, tile
+
+.segment "CODE"
+.proc irq_handler
+  RTI
+.endproc
+
+.proc nmi_handler
+  LDA #$00
+  STA OAMADDR
+  LDA #$02
+  STA OAMDMA
+
+
+
+
+
+.endproc
+
+; update tiles *after* DMA transfer
+LDX #$04
+STX tile
+
+LDX #$00
+LDY #$00
+
+
+load_sprites:
+
+
+  JSR draw_player
+
+;   Here we come back from the Subroutine
+
+
+
+  ; Update X Coordinate
+  LDA player_x
+  CLC
+  ADC #$10      ; Currently at 16, is that right? Yes, bcuz sprites are 16x16
+  STA player_x
+
+
+
+; Increase tile +4 after running once
+  LDA tile
+  CLC
+  ADC #$04
+  STA tile
+
+; ; Increase X so that it stores in proper OAM Memory 
+;   TXA       ; Transfer X -> A to sum +16
+;   CLC
+;   ADC #$10  ; + 16
+;   TAX       ; Transfer A -> X after sum
+
+  INY
+  INY
+  INY
+  INY
+  INY
+  INY
+  INY
+  INY
+  INY
+  INY
+  INY
+  INY
+  INY
+  INY
+  INY
+  INY
+
+  ; We should end when tile = $08 [?] that's if we're only 
+  ; going to render the first sprite which goes from $04-$07
+  LDX tile
+  CPX #$0C
+
+  ; If not true, loop.
+  BNE load_sprites
+
+;   If we were to finish shit, reset variables
+
+  LDX #$00
+  LDY #$00
+  LDA #$01
+  STA player_x
+
+  
+
+.import reset_handler
+
+.export main
+.proc main
+  ; write a palette
+  LDX PPUSTATUS
+  LDX #$3f
+  STX PPUADDR
+  LDX #$00
+  STX PPUADDR
+load_palettes:
+  LDA palettes,X
+  STA PPUDATA
+  INX
+  CPX #$20
+  BNE load_palettes
+
+vblankwait:       ; wait for another vblank before continuing
+  BIT PPUSTATUS
+  BPL vblankwait
+
+  LDA #%10010000  ; turn on NMIs, sprites use first pattern table
+  STA PPUCTRL
+  LDA #%10011110  ; turn on screen
+  STA PPUMASK
+
+forever:
+  JMP forever
+.endproc
+
+.proc draw_player
+  ; save registers
+  PHP
+  PHA
+  TXA
+  PHA
+  TYA
+  PHA
+  
+  ; write player ship tile numbers
+  LDA #$04      ; apparently this loads first from tiles
+  STA $0201, Y
+  LDA #$05   ; and this one the second and so on...
+  STA $0205, Y
+  LDA #$06
+  STA $0209, Y
+  LDA #$07
+  STA $020d, Y
+
+
+  ; write player ship tile atributes
+  ; use palette 0 . I really dgaf about this cus palette doesnt matter!
+  LDA #$00
+  STA $0202
+  STA $0206
+  STA $020a
+  STA $020e
+
+  ; store tile locations
+  ; top left tile:
+  LDA player_y
+  STA $0200, Y
+  LDA player_x
+  STA $0203, Y
+
+  ; top right tile (x + 8):
+  LDA player_y
+  STA $0204, Y
+  LDA player_x
+  CLC
+  ADC #$08
+  STA $0207, Y
+
+  ; bottom left tile (y + 8):
+  LDA player_y
+  CLC
+  ADC #$08
+  STA $0208, Y
+  LDA player_x
+  STA $020b, Y
+
+  ; bottom right tile (x + 8, y + 8)
+  LDA player_y
+  CLC
+  ADC #$08
+  STA $020c, Y
+  LDA player_x
+  CLC
+  ADC #$08
+  STA $020f, Y
+
+
+  ; restore registers and return
+  PLA 
+  TYA
+  PLA
+  TAX 
+  PLA 
+  PLP 
+  RTS 
+.endproc
+
+.segment "VECTORS"
+.addr nmi_handler, reset_handler, irq_handler
+
+.segment "RODATA"
+palettes:
+  .byte $0f, $0f, $0f, $0f
+  .byte $0f, $0f, $0f, $0f
+  .byte $0f, $0f, $0f, $0f
+  .byte $0f, $0f, $0f, $0f
+
+  .byte $0f ,$11, $21, $01
+  .byte $0f, $19, $09, $29
+  .byte $0f, $19, $09, $29
+  .byte $0f, $19, $09, $29
+
+; sprites:
+;   .byte $70, $04, $00, $80
+;   .byte $70, $05, $00, $88
+;   .byte $78, $14, $00, $80
+;   .byte $78, $15, $00, $88
+
+.segment "CHR"
+.incbin "gt1.chr"
