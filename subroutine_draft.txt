@@ -33,6 +33,11 @@ STX tile
 LDX #$00
 LDY #$00
 
+LDA #$60
+STA player_x
+
+LDA #$40
+STA player_y
 
 load_sprites:
 
@@ -42,12 +47,18 @@ load_sprites:
 ;   Here we come back from the Subroutine
 
 
-
   ; Update X Coordinate
   LDA player_x
   CLC
-  ADC #$10      ; Currently at 16, is that right? Yes, bcuz sprites are 16x16
+  ADC #$10      ; Add 16, is that right? Yes, bcuz sprites are 16x16
   STA player_x
+
+
+;   ; Update Y Coordinate (This is only here for testing, makes a diagonal)
+;   LDA player_y
+;   CLC
+;   ADC #$10      ; Add 16, is that right? Yes, bcuz sprites are 16x16
+;   STA player_y
 
 
 
@@ -63,27 +74,18 @@ load_sprites:
 ;   ADC #$10  ; + 16
 ;   TAX       ; Transfer A -> X after sum
 
-  INY
-  INY
-  INY
-  INY
-  INY
-  INY
-  INY
-  INY
-  INY
-  INY
-  INY
-  INY
-  INY
-  INY
-  INY
-  INY
+  ; Increase Y by +16 
+  TYA 
+  CLC
+  ADC #$10
+  TAY
 
   ; We should end when tile = $08 [?] that's if we're only 
   ; going to render the first sprite which goes from $04-$07
+
+;   Adding +4 here would allow for one more tile to be rendered :)
   LDX tile
-  CPX #$0C
+  CPX #$1C
 
   ; If not true, loop.
   BNE load_sprites
@@ -92,8 +94,15 @@ load_sprites:
 
   LDX #$00
   LDY #$00
-  LDA #$01
+
+  LDA #$60
   STA player_x
+
+  LDA #$40 
+  STA player_y
+
+  LDA #$04
+  STA tile
 
   
 
@@ -101,6 +110,8 @@ load_sprites:
 
 .export main
 .proc main
+
+
   ; write a palette
   LDX PPUSTATUS
   LDX #$3f
@@ -137,13 +148,26 @@ forever:
   PHA
   
   ; write player ship tile numbers
-  LDA #$04      ; apparently this loads first from tiles
+  ; Going to play around using INC 
+
+
+  LDA tile      ; apparently this loads first from tiles
   STA $0201, Y
-  LDA #$05   ; and this one the second and so on...
+
+  LDA tile
+  CLC 
+  ADC #$01
   STA $0205, Y
-  LDA #$06
+
+  LDA tile
+  CLC 
+  ADC #$02
   STA $0209, Y
-  LDA #$07
+
+
+  LDA tile
+  CLC 
+  ADC #$03
   STA $020d, Y
 
 
@@ -222,3 +246,15 @@ palettes:
 
 .segment "CHR"
 .incbin "gt1.chr"
+
+
+; Safe-State, don't alter:
+;   What currently works with this code:
+;       - Renders up to 4 sprites horizontally.
+;       - Makes use of Zero Page for Tile, Player_X, Player_Y
+;       - Subroutine works fine
+;
+;   What is missing:
+;       - Only rendering horizontally once, need to add a condition
+;         so that once 4 sprites have been rendered it goes to the
+;         next row below and starts player_x at it's original position
