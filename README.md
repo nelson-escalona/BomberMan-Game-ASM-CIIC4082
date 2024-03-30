@@ -1,6 +1,10 @@
 *BomberMan-Game-ASM-CIIC4082*
 ==========
 
+# FSM Diagram for sprite animations of Task #2
+
+![Example Image](Extras/FSM_Diagram.jpg)
+
 # Palettes Used:
 ## Tank:
 ### Main:
