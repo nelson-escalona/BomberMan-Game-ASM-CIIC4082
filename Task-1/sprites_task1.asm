@@ -88,6 +88,302 @@ load_palettes:
   CPX #$20
   BNE load_palettes
 
+  ; Stage 2 Bush Block
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$A4
+  STA PPUADDR
+  LDX #$20
+  STX PPUDATA
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$A5
+  STA PPUADDR
+  LDX #$21
+  STX PPUDATA
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$C4
+  STA PPUADDR
+  LDX #$22
+  STX PPUDATA
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$C5
+  STA PPUADDR
+  LDX #$23
+  STX PPUDATA
+
+  ; Brick Block
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$A7
+  STA PPUADDR
+  LDX #$04
+  STX PPUDATA
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$A8
+  STA PPUADDR
+  LDX #$05
+  STX PPUDATA
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$C7
+  STA PPUADDR
+  LDX #$06
+  STX PPUDATA
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$C8
+  STA PPUADDR
+  LDX #$07
+  STX PPUDATA
+
+  ; Wood Block
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$AA
+  STA PPUADDR
+  LDX #$08
+  STX PPUDATA
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$AB
+  STA PPUADDR
+  LDX #$09
+  STX PPUDATA
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$CA
+  STA PPUADDR
+  LDX #$0A
+  STX PPUDATA
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$CB
+  STA PPUADDR
+  LDX #$0B
+  STX PPUDATA
+
+  ; Stage 1 Bush
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$AD
+  STA PPUADDR
+  LDX #$0C
+  STX PPUDATA
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$AE
+  STA PPUADDR
+  LDX #$0D
+  STX PPUDATA
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$CD
+  STA PPUADDR
+  LDX #$0E
+  STX PPUDATA
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$CE
+  STA PPUADDR
+  LDX #$0F
+  STX PPUDATA
+
+  ; Damaged stone block
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$B0
+  STA PPUADDR
+  LDX #$10
+  STX PPUDATA
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$B1
+  STA PPUADDR
+  LDX #$11
+  STX PPUDATA
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$D0
+  STA PPUADDR
+  LDX #$12
+  STX PPUDATA
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$D1
+  STA PPUADDR
+  LDX #$13
+  STX PPUDATA
+
+  ; Damaged brick block
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$B3
+  STA PPUADDR
+  LDX #$14
+  STX PPUDATA
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$B4
+  STA PPUADDR
+  LDX #$15
+  STX PPUDATA
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$D3
+  STA PPUADDR
+  LDX #$16
+  STX PPUDATA
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$D4
+  STA PPUADDR
+  LDX #$17
+  STX PPUDATA
+
+  ; Damaged wood block
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$B6
+  STA PPUADDR
+  LDX #$18
+  STX PPUDATA
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$B7
+  STA PPUADDR
+  LDX #$19
+  STX PPUDATA
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$D6
+  STA PPUADDR
+  LDX #$1A
+  STX PPUDATA
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$D7
+  STA PPUADDR
+  LDX #$1B
+  STX PPUDATA
+
+  ; Stage 2 bush
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$B9
+  STA PPUADDR
+  LDX #$1C
+  STX PPUDATA
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$BA
+  STA PPUADDR
+  LDX #$1D
+  STX PPUDATA
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$D9
+  STA PPUADDR
+  LDX #$1E
+  STX PPUDATA
+  LDA PPUSTATUS
+  LDA #$22
+  STA PPUADDR
+  LDA #$DA
+  STA PPUADDR
+  LDX #$1F
+  STX PPUDATA
+
+  ; Attribute Tables
+  ; Bush block and half of stone block
+  LDA PPUSTATUS
+  LDA #$23
+  STA PPUADDR
+  LDA #$E9
+  STA PPUADDR
+  LDA #%00100010
+  STA PPUDATA
+
+  ; Other half of stone block and brick block
+  LDA PPUSTATUS
+  LDA #$23
+  STA PPUADDR
+  LDA #$EA
+  STA PPUADDR
+  LDA #%01000100
+  STA PPUDATA
+
+  ; Wood block
+  LDA PPUSTATUS
+  LDA #$23
+  STA PPUADDR
+  LDA #$EB
+  STA PPUADDR
+  LDA #%11111111
+  STA PPUDATA
+
+  ; Stage 2 Bush block and half of Damaged stone block
+  LDA PPUSTATUS
+  LDA #$23
+  STA PPUADDR
+  LDA #$EC
+  STA PPUADDR
+  LDA #%00100010
+  STA PPUDATA
+
+  ; Other half of Damaged stone block and Damaged brick block
+  LDA PPUSTATUS
+  LDA #$23
+  STA PPUADDR
+  LDA #$ED
+  STA PPUADDR
+  LDA #%01000100
+  STA PPUDATA
+
+  ; Damaged Wood block
+  LDA PPUSTATUS
+  LDA #$23
+  STA PPUADDR
+  LDA #$EE
+  STA PPUADDR
+  LDA #%11111111
+  STA PPUDATA
+
+
 vblankwait:       ; wait for another vblank before continuing
   BIT PPUSTATUS
   BPL vblankwait
@@ -970,10 +1266,10 @@ forever:
 
 .segment "RODATA"
 palettes:
-  .byte $0f, $0f, $0f, $0f
-  .byte $0f, $0f, $0f, $0f
-  .byte $0f, $0f, $0f, $0f
-  .byte $0f, $0f, $0f, $0f
+  .byte $0f, $00, $10, $30
+  .byte $0f, $05, $16, $37
+  .byte $0f, $0B, $1A, $29
+  .byte $0f, $26, $36, $37
 
   .byte $0f ,$11, $21, $01
   .byte $0f, $19, $09, $29
