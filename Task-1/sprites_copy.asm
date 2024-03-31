@@ -575,7 +575,7 @@ forever:
   LDA sprite7_x
   CLC
   ADC #$08
-  STA $0257
+  STA $0267
 
   ; bottom left tile (y + 8):
   LDA sprite7_y
@@ -593,7 +593,7 @@ forever:
   LDA sprite7_x
   CLC
   ADC #$08
-  STA $025f
+  STA $026f
 
   ; restore registers and return
   PLA 
@@ -935,7 +935,7 @@ forever:
   LDA sprite12_x
   CLC
   ADC #$08
-  STA $02a7
+  STA $02b7
 
   ; bottom left tile (y + 8):
   LDA sprite12_y

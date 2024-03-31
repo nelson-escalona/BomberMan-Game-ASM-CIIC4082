@@ -35,19 +35,19 @@ vblankwait:
   STA sprite2_y
   LDA #$08
   STA sprite2_tile
-  LDA #76
+  LDA #$66
   STA sprite3_x
   LDA #$66
   STA sprite3_y
   LDA #$0c
   STA sprite3_tile
-  LDA #$46
-  STA sprite4_x
   LDA #$76
+  STA sprite4_x
+  LDA #$66
   STA sprite4_y
   LDA #$10
   STA sprite4_tile
-  LDA #$56
+  LDA #$46
   STA sprite5_x
   LDA #$76
   STA sprite5_y
