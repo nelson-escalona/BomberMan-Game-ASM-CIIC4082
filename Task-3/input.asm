@@ -8,11 +8,13 @@ player_dir: .res 1
 scroll: .res 1
 ppuctrl_settings: .res 1
 pad1: .res 1
-first_tile: .res 4
-animation: .res 1
-tick: .byte $00
+
+; These are the new ones I've added to animate and whatnot
+animation: .res 2
+offset: .res 2
+tick: .res 3
+sprite: .res 8
 .exportzp player_x, player_y, pad1
-; Don't have to export first_tile, animation, tick cus im using them here
 
 .segment "CODE"
 .proc irq_handler
@@ -28,8 +30,6 @@ tick: .byte $00
   STA OAMDMA
 	LDA #$00
 
-
-
 	; read controller
 	JSR read_controller1
 
@@ -37,6 +37,25 @@ tick: .byte $00
 	; and after reading controller state
 	JSR update_player
   JSR draw_player
+
+	LDA scroll
+	CMP #$00 ; did we scroll to the end of a nametable?
+	BNE set_scroll_positions
+	; if yes,
+	; Update base nametable
+	LDA ppuctrl_settings
+	EOR #%00000010 ; flip bit 1 to its opposite
+	STA ppuctrl_settings
+	STA PPUCTRL
+	LDA #240
+	STA scroll
+
+set_scroll_positions:
+	LDA #$00 ; X scroll first
+	STA PPUSCROLL
+	DEC scroll
+	LDA scroll ; then Y scroll
+	STA PPUSCROLL
 
   RTI
 .endproc
@@ -47,6 +66,9 @@ tick: .byte $00
 
 .export main
 .proc main
+	LDA #239	 ; Y is only 240 lines tall!
+	STA scroll
+
   ; write a palette
   LDX PPUSTATUS
   LDX #$3f
@@ -59,8 +81,6 @@ load_palettes:
   INX
   CPX #$20
   BNE load_palettes
-
-
 
 vblankwait:       ; wait for another vblank before continuing
   BIT PPUSTATUS
@@ -76,54 +96,20 @@ forever:
   JMP forever
 .endproc
 
-; 
-; How can I handle the changes?
+; The update_player subroutine will now also take care of letting
+; the draw_player subroutine know what sprite should it draw and 
+; if it should animate it.
 
-;   For now, update_player only moves coordinates, it doesn't really
-;   do anything else. Similarly, the draw_player subroutine only
-;   renders a static sprite of the ship, not useful either.
+; This will be done by changing the `sprite` here, the `sprite` 
+; is the first tile for each direction and animation. For example,
+; $04 is the first tile looking upwards.
 
-;   In our case, we need the following:
+; Steps:
+;   1. Modify update_player to change the `sprite` depending on direction
+;
+;   2. For now, always animate, afterwards, add the `animation` condition
+;      so that we only animate if there is a button being pressed.
 
-;     - Move the character (done by default)
-;     - Change  Sprite to display direction.
-;     - Animate Sprite based on direction (only if moving)
-
-
-;   So, we already know we'd have to heavily modify both subroutines,
-;   where could we start, what are some ideas?
-
-;     - The update_player could help by changing the sprite 
-;       to the first one that indicates direction for the button pressed.
-;       Let's refer to this first tile as the first_tile.
-
-;         For example, Tile $04 is the First Tile for the Up-Direction,
-;         with $05,$06,$07 following it to complete the Sprite. If there
-;         were an animation, we'd need to iterate over the next 8 Tiles 
-;         ( Next 2 Sprites) and then return to $04. 
-
-;         If there is no animation (No Buttons Pressed), we'd iterate
-;         over the same set of tiles.
-
-;     - Get draw_player to draw animations, with ticks included and whatnot.
-;       This can be done by making draw_player iterate over the next 11 tiles
-;       from the first_tile (12 Tiles Total, 3 Sprites) and repeating that.
-
-;     - If there is NO animation, we'd have draw_player to only draw the last
-;       sprite that it was on, skipping any procedure to animate.
-
-;   NOTES:
-
-;     - Since we might refer to first_tile quite often, it has been called
-;       in the Zero Page :).
-
-;     - A "boolean" called `animation` has also been turned on. This will
-;       have the values 0 or 1 to indicate whether a Button has been pressed
-;       or not.
-
-;     - Also created a `tick` in the zero page to slow down animation.
-
-; 
 
 .proc update_player
   PHP  ; Start by saving registers,
@@ -133,68 +119,46 @@ forever:
   TYA
   PHA
 
-  ; By default, assume we're animating, if we aren't it will
-  ; be corrected on the `done_checking` label.
-  LDX #$01
-  STX animation
-
   LDA pad1        ; Load button presses
   AND #BTN_LEFT   ; Filter out all but Left
   BEQ check_right ; If result is zero, left not pressed
 
+
   DEC player_x  ; If the branch is not taken, move player left
   LDX #$28        ; This is the first tile that looks left
-  STX first_tile  ; Store it in first tile :)
-  JMP end
-
+  STX sprite  ; Store it in sprite :)
 
 check_right:
   LDA pad1
   AND #BTN_RIGHT
   BEQ check_up
 
+
   INC player_x
   LDX #$10        ; First Tile Looking Right       
-  STX first_tile  ; Yup, we store it 
-  JMP end 
-
+  STX sprite  ; Yup, we store it 
 
 check_up:
   LDA pad1
   AND #BTN_UP
   BEQ check_down
 
+
   DEC player_y
   LDX #$04        ; First Tile Looking Up       
-  STX first_tile  ; Yup, we store it here too
-  JMP end 
-
+  STX sprite  ; Yup, we store it here too
 
 check_down:
-;   LDA pad1
-;   AND #BTN_DOWN
-;   BEQ done_checking
+  LDA pad1
+  AND #BTN_DOWN
+  BEQ done_checking
+
 
   INC player_y
   LDX #$1C        ; First Tile Looking Down       
-  STX first_tile  ; Yup, last one.
-  JMP end 
-
+  STX sprite  ; Yup, last one.
 
 done_checking:
-  ; We will only get here if no button was pressed at all, otherwise
-  ; they would jup to the label below, end. All that we'll do here
-  ; is to tell our program that we're not animating cus nothing was pressed.
-  LDX #$00
-  STX animation
-
-  ; Also reset the tick to 0
-  LDX #$00
-  STX tick
-
-
-end:
-
   PLA ; Done with updates, restore registers
   TAY ; and return to where we called this
   PLA
@@ -205,8 +169,24 @@ end:
 .endproc
 
 
-; I believe that this will just keep calling on itself (NMI)
-; forever so there's no need to make any self-calls.
+; The draw_player subroutine must also be update so that it's more
+; dynamic. We want it to render whatever is in `sprite` which could
+; change depending on the button being pressed.
+
+; Steps:
+;   1. Modify the subroutine so that it draws tiles based on the `sprite`.
+;
+;   2. Create, Update and Check the `Tick` so that we can animate.
+;
+;   3. Apply the same with the `offset`, so that we can animate the following
+;      tiles after `sprite` to form the animation.
+;
+;   4. Make sure to reset these when the animation is completed, I plan for this
+;   to take 20 ticks per sprite. Once we animate all ticks, return to original sprite
+;   which would be done by setting the offset to 0.
+;
+;   5. Set the conditional `animation` to decide whether we'll animate or not.
+
 .proc draw_player
   ; save registers
   PHP
@@ -216,37 +196,37 @@ end:
   TYA
   PHA
 
-  ; Start rendering sprite!
-  ; by having Y as an offset, we should be able to
-  ; animate the sprite... not working though.
-  LDA first_tile, Y      
+  ; LDA #$0C      ; Testing offset
+  ; STA offset    ; Seems to work fine!
+
+
+  ; Draw based on the `sprite` determined by button presses.
+  LDA sprite
+  CLC
+  ADC offset
   STA $0201
 
-  LDA first_tile, Y
-  CLC 
+  LDA sprite
+  CLC
+  ADC offset
+  CLC
   ADC #$01
   STA $0205
 
-  LDA first_tile, Y
-  CLC 
+  LDA sprite
+  CLC
+  ADC offset
+  CLC
   ADC #$02
   STA $0209
 
 
-  LDA first_tile, Y
-  CLC 
+  LDA sprite
+  CLC
+  ADC offset
+  CLC
   ADC #$03
   STA $020d
-  ; Done rendering the sprite!
-
-
-  ; Here, return first_tile to original value.
-  ; if it has to be altered (move to next), 
-  ; then that will be done below.
-
-  ; Actually, I don't think that this has to be done
-  ; the code above only alters the accumulator!
-
 
   ; write player ship tile attributes
   ; use palette 0
@@ -290,61 +270,55 @@ end:
   STA $020f
 
 
-  ; All the ticking and stuff can be done here.
+  ; Use this section to check conditions.
+  ;   - Update Tick
+  ;   - Check Tick
+  ;
+  ;   - Update Tile/offset if necessary
 
-  ;   What should I do first? I say, create the conditional
-  ;   for animation
 
-
-  ; if it's 0, then we don't animate and jump to end of subroutine
-;   LDX animation
-;   CPX #$00
-;   BEQ end_draw
-;   Otherwise, do all the animating stuff here!
-
-  
-  ; Increase the Tick + 1
+  ; First, Increase the Tick
   LDX tick
   INX
   STX tick
 
 
-
-  ; Check if Tick == 20 (Time to move to 2nd sprite of animation)
+  ; The Tick is in X, so check if it has hit either 20 or 40 ticks.
   LDX tick
-  CPX #$14          ; This is 20 Decimal.
-  BEQ move_sprite   ; if tick == 20, move sprite
+  CPX #$14    ; This is 20 Decimal I think
+  BEQ move_sprite
 
-  ; Check if Tick == 40 (Time to move to 3rd sprite of animation)
-  LDX tick
-  CPX #$28          ; This is 40 Decimal.
-  BEQ move_sprite   ; if tick == 40, move sprite
-
-  ; Check if Tick == 60 (Time to reset the animation!)
-  LDX tick
-  CPX #$3C      ; This is 60 Decimal.
-  BEQ reset_sprite
+  CPX #$28
+  BEQ move_sprite
 
 
-  ; If no comparison works, jump to end
+  ; Now, we check if the sprite is greater than or equal to 60,
+  ; in which case we'd reset the sprite to it's first frame
+  CLC   ; Clear the Carry before the comparison we're about to make!
+  CPX #$3C    ; This is 60 Decimal
+  BEQ reset_sprite    ; Equal
+  BCS reset_sprite    ; Greater
+
+
+  ; If no comparison worked, go to end!
   JMP end_draw
 
+  ; We have to move to the next sprite, so all we'd have to do is to 
+  ; move the offset + 4! (number of tiles per sprite = 4)
   move_sprite:
-    ; Increase Y by 4
-    INY
-    INY
-    INY
-    INY
-    JMP end_draw
+    LDA offset
+    CLC
+    ADC #$04
+    STA offset
 
+    JMP end_draw    ; JMP to End to avoid going into any other labels
+
+  ; In this case, we'd have to set the offset back to $00 and the tick as well!
   reset_sprite:
-
-    ; Reset Y
-    LDY #$00
-
-    ; Reset tick
     LDA #$00
+    STA offset
     STA tick
+
 
 
   end_draw:
@@ -373,6 +347,6 @@ palettes:
 .byte $0f, $19, $09, $29
 .byte $0f, $19, $09, $29
 
-; Have to change the .chr to the proper one!
+; Change this to our CHR
 .segment "CHR"
 .incbin "all_tiles.chr"
