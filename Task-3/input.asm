@@ -61,8 +61,7 @@ set_scroll_positions:
 .endproc
 
 .import reset_handler
-.import draw_starfield
-.import draw_objects
+
 
 .export main
 .proc main
@@ -119,6 +118,12 @@ forever:
   TYA
   PHA
 
+  ; By default, we will assume that there is a button being pressed
+  ; if this is not the case, it will be corrected in `done_checking`
+  LDA #$01
+  STA animation
+
+
   LDA pad1        ; Load button presses
   AND #BTN_LEFT   ; Filter out all but Left
   BEQ check_right ; If result is zero, left not pressed
@@ -127,6 +132,7 @@ forever:
   DEC player_x  ; If the branch is not taken, move player left
   LDX #$28        ; This is the first tile that looks left
   STX sprite  ; Store it in sprite :)
+  JMP end_updt
 
 check_right:
   LDA pad1
@@ -137,6 +143,7 @@ check_right:
   INC player_x
   LDX #$10        ; First Tile Looking Right       
   STX sprite  ; Yup, we store it 
+  JMP end_updt
 
 check_up:
   LDA pad1
@@ -147,6 +154,7 @@ check_up:
   DEC player_y
   LDX #$04        ; First Tile Looking Up       
   STX sprite  ; Yup, we store it here too
+  JMP end_updt
 
 check_down:
   LDA pad1
@@ -157,8 +165,18 @@ check_down:
   INC player_y
   LDX #$1C        ; First Tile Looking Down       
   STX sprite  ; Yup, last one.
+  JMP end_updt
 
+
+; This label indicates there was no button pressed, for which we will
+; just reset the offset and the tick! Also set `animation` to #$00
 done_checking:
+  LDA #$00
+  STA offset
+  STA tick
+  STA animation
+
+end_updt:
   PLA ; Done with updates, restore registers
   TAY ; and return to where we called this
   PLA
@@ -276,6 +294,11 @@ done_checking:
   ;
   ;   - Update Tile/offset if necessary
 
+
+  ; Check if we're animating or not! If not, end draw_update
+  LDA animation
+  CMP #$00
+  BEQ end_draw
 
   ; First, Increase the Tick
   LDX tick
