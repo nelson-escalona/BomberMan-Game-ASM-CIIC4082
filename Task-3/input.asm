@@ -14,7 +14,7 @@ animation: .res 2
 offset: .res 2
 tick: .res 3
 sprite: .res 8
-.exportzp player_x, player_y, pad1
+.exportzp player_x, player_y, pad1, sprite
 
 .segment "CODE"
 .proc irq_handler
@@ -365,7 +365,7 @@ palettes:
 .byte $0f, $0c, $07, $13
 .byte $0f, $19, $09, $29
 
-.byte $0f, $2d, $10, $15
+.byte $0f, $11, $21, $01
 .byte $0f, $19, $09, $29
 .byte $0f, $19, $09, $29
 .byte $0f, $19, $09, $29
