@@ -245,9 +245,9 @@ forever:
 
 
     ; PREP : Mask our curr_byte so we can get the curr_mega
-    LDA curr_byte
+    LDA current_byte
     AND #%00000011
-    STA curr_mega
+    STA current_mega
 
 
     ; Write INDEX+0 to PPUADDRESS
@@ -314,10 +314,10 @@ forever:
     STA index_low
 
     ; Shift our curr_byte, as shown in the `MEGA_NAMETABLE` sheet.
-    LDA curr_byte
+    LDA current_byte
     LSR A
     LSR A
-    STA curr_byte
+    STA current_byte
 
     ; Loop Condition, if X != 4, Loop
     INX                 ; X += 1
