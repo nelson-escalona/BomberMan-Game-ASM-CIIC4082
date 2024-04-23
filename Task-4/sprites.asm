@@ -118,7 +118,7 @@ forever:
   ADC MXb
   STA index_low
   LDA #$00
-  LDX #$00
+  LDX m_index
 
   Load_Background:
     LDA #$20
@@ -127,10 +127,28 @@ forever:
     LDA #$00
     ADC index_low
     STA PPUADDR
+    ;LDY stage1left,X
+  Calculate_tile:
+    LDA stage1left,X
+    AND #$03
+    CMP #$01
+    BEQ Load_Stone ; We encountered a stone tile
+    CMP #$10
+    BEQ Load_Brick
+    ASL A
+    ASL A
 
+  Load_Bush:
+    ; logic to draw a bush
+    ; we need to update index to go to the next megatile
 
+  Load_Stone:
+    ; logic to draw a stone block
+    ; we need to update index to go to the next megatile
 
-    
+  Load_Brick:
+    ; logic to draw a brick block
+    ; we need to update index to go to the next megatile
 
   ; restore registers and return
   PLA 
