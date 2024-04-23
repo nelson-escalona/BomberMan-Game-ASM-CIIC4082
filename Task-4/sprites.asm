@@ -58,29 +58,10 @@ vblankwait:       ; wait for another vblank before continuing
 
   JSR load_M_segment
 
-  ; Increase m_index ++
-  LDX m_index
-  INX
-  STX m_index
-
-  ; Check if m_index >= 60
-  CPX #$3C
-  BEQ reset_mindex
-
   LDA #%10010000  ; turn on NMIs, sprites use first pattern table
   STA PPUCTRL
   LDA #%10011110  ; turn on screen
   STA PPUMASK
-
-  JMP end_vblank
-
-  reset_mindex:
-    LDX #$00
-    STX m_index
-
-
-  end_vblank:
-
 
 forever:
   JMP forever
@@ -95,110 +76,117 @@ forever:
   TYA
   PHA
 
+  LoopMindex:
+    ; Here, we'll be getting the (X,Y) for the Mega Index
+    ; from our m_index. This is what was done in the video
+    ; in which the professor provides the following steps:
+    ;       MYb = Mindex/4 (or Mindex>>2); 
+    ;       MXb = Mindex%4 (or Mindex&&0x03)
 
-  ; Here, we'll be getting the (X,Y) for the Mega Index
-  ; from our m_index. This is what was done in the video
-  ; in which the professor provides the following steps:
-  ;       MYb = Mindex/4 (or Mindex>>2); 
-  ;       MXb = Mindex%4 (or Mindex&&0x03)
-
-  LDA m_index ; load the current M index into A
-  LSR A       ; first shift right
-  LSR A       ; second shift right
-  STA MYb     ; store A into MYb
-  LDA m_index
-  AND #$03    ; mask out the first two bits (from right to left)
-  STA MXb     ; store A into MXb
-
-
-
-  ; Below, we'll be moving towards the translation
-  ; from MINDEX -> INDEX. To do this, we must first
-  ; perform the following steps:
-  ;     1. Multiply MYb * 64
-  ;     2. Multiply MXb * 8
-  ;     3. Sum the two to get INDEX.
-
-  ; 1. Multiply MYb (Mega Index-Y) 2^6 = 64 times.
-  LDA MYb
-  ASL A
-  ASL A
-  ASL A
-  ASL A
-  ASL A
-  ASL A 
-  STA MYb
-  ; Multiplication is done and we store it back to MYb
-
-
-  ; 2. Repeat a similar process for MXb, only 2^3 times.
-  LDA MXb
-  ASL A
-  ASL A
-  ASL A 
-  STA MXb
-  ; Done, stored back to MXb
-
-  ; 3. Sum both of the previous values to acquire `index`.
-  LDA $00
-  ADC MXb
-  ADC MYb
-  STA index
+    LDA m_index ; load the current M index into A
+    LSR A       ; first shift right
+    LSR A       ; second shift right
+    STA MYb     ; store A into MYb
+    LDA m_index
+    AND #$03    ; mask out the first two bits (from right to left)
+    STA MXb     ; store A into MXb
 
 
 
-  ; Here we'll be doing the new operation to be able to
-  ; store the low and high bytes to get the `INDEX`.
-  ; The steps for these are as follows:
-  ;
-  ;     1. Highbit = (MYb >> 2) AND 00000011;
-  ;            - Shift MYb twice to the right
-  ;            - Mask MYb AND $03 or %00000011
-  ;
-  ;     2. Lowbit = (MXB << 3) + (MYb << 6)
-  ;            - Shift MXb 3 times to the left
-  ;            - Shift MYb 6 times to the left
-  ;            - Add the two and STA Lowbit.
-  
-  ; 1. Shift MYb twice and Mask it
-  LDA MYb
-  LSR A
-  LSR A
-  AND #$03
-  STA index_high
+    ; Below, we'll be moving towards the translation
+    ; from MINDEX -> INDEX. To do this, we must first
+    ; perform the following steps:
+    ;     1. Multiply MYb * 64
+    ;     2. Multiply MXb * 8
+    ;     3. Sum the two to get INDEX.
 
-  ; 2.1 Shift MXb 3 times left.
-  LDA MXb
-  ASL A
-  ASL A
-  ASL A
-  STA MXb
+    ; 1. Multiply MYb (Mega Index-Y) 2^6 = 64 times.
+    LDA MYb
+    ASL A
+    ASL A
+    ASL A
+    ASL A
+    ASL A
+    ASL A 
+    STA MYb
+    ; Multiplication is done and we store it back to MYb
 
-  ; 2.2 Shift MYb  6 times left.
-  LDA MYb
-  ASL A
-  ASL A
-  ASL A
-  ASL A
-  ASL A
-  ASL A
 
-  ; 2.3 Add the two and store it.
-  ADC MXb
-  STA index_low
-  LDA #$00
-  LDX m_index
+    ; 2. Repeat a similar process for MXb, only 2^3 times.
+    LDA MXb
+    ASL A
+    ASL A
+    ASL A 
+    STA MXb
+    ; Done, stored back to MXb
 
-  ; Where are we at right now? Well we currently have our
-  ; INDEX for the Top-Left of the MINDEX. With this, we can
-  ; proceed to commence drawing the Mega Tiles inside this
-  ; MINDEX. 
-  ;
-  ; Thus, we will need to commence writing to PPUDATA, we'll
-  ; JSR into a new Subroutine that should write onto all the
-  ; the tiles within this Mega Index!
-  JSR draw_mega_index
+    ; 3. Sum both of the previous values to acquire `index`.
+    LDA $00
+    ADC MXb
+    ADC MYb
+    STA index
 
+
+
+    ; Here we'll be doing the new operation to be able to
+    ; store the low and high bytes to get the `INDEX`.
+    ; The steps for these are as follows:
+    ;
+    ;     1. Highbit = (MYb >> 2) AND 00000011;
+    ;            - Shift MYb twice to the right
+    ;            - Mask MYb AND $03 or %00000011
+    ;
+    ;     2. Lowbit = (MXB << 3) + (MYb << 6)
+    ;            - Shift MXb 3 times to the left
+    ;            - Shift MYb 6 times to the left
+    ;            - Add the two and STA Lowbit.
+    
+    ; 1. Shift MYb twice and Mask it
+    LDA MYb
+    LSR A
+    LSR A
+    AND #$03
+    STA index_high
+
+    ; 2.1 Shift MXb 3 times left.
+    LDA MXb
+    ASL A
+    ASL A
+    ASL A
+    STA MXb
+
+    ; 2.2 Shift MYb  6 times left.
+    LDA MYb
+    ASL A
+    ASL A
+    ASL A
+    ASL A
+    ASL A
+    ASL A
+
+    ; 2.3 Add the two and store it.
+    ADC MXb
+    STA index_low
+
+    ; Where are we at right now? Well we currently have our
+    ; INDEX for the Top-Left of the MINDEX. With this, we can
+    ; proceed to commence drawing the Mega Tiles inside this
+    ; MINDEX. 
+    ;
+    ; Thus, we will need to commence writing to PPUDATA, we'll
+    ; JSR into a new Subroutine that should write onto all the
+    ; the tiles within this Mega Index!
+    JSR draw_mega_index
+
+    ; Increase m_index
+    LDX m_index
+    INX 
+    STX m_index
+
+    ; Check if Mindex != 59 (last index)
+    LDX m_index
+    CPX #$3B
+    BNE LoopMindex 
 
   PLA 
   TYA
@@ -396,10 +384,10 @@ forever:
 
 .segment "RODATA"
 palettes:
-  .byte $0f, $0f, $0f, $0f
-  .byte $0f, $0f, $0f, $0f
-  .byte $0f, $0f, $0f, $0f
-  .byte $0f, $0f, $0f, $0f
+  .byte $0f, $10, $10, $10
+  .byte $0f, $10, $10, $10
+  .byte $0f, $11, $11, $11
+  .byte $0f, $11, $11, $11
 
   .byte $0f ,$11, $21, $01
   .byte $0f, $19, $09, $29
