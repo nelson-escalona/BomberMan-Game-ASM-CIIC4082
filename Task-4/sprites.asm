@@ -205,6 +205,14 @@ forever:
   LDX #$00
 
 
+  ; PREP: Before getting into the Loop Below, increase index_low
+  ;       by +6 so that it starts at the last Mega Tile and we will
+  ;       
+  LDA index_low
+  CLC
+  ADC #$06
+  STA index_low
+
   ; 1.1 Get byte from nametable and store it.
   ; NOTE : Might have to load m_index to Y so that
   ;        we can actually use it as an offset.
@@ -236,18 +244,10 @@ forever:
 
 
 
-    ; PREP : Get the mask we'll use for this megatile, using X
-    ;        as our offset for each iteration.
-    LDA masks, X
-    STA current_mask
-
-    ; Mask the Current byte so that we
-    ; can get the by for this Megatile
-    LDA current_byte
-    AND current_mask
-
-    ; Now we have the current megatile!
-    STA current_mega
+    ; PREP : Mask our curr_byte so we can get the curr_mega
+    LDA curr_byte
+    AND #%00000011
+    STA curr_mega
 
 
     ; Write INDEX+0 to PPUADDRESS
@@ -306,12 +306,18 @@ forever:
 
 
 
-    ; Finished with all INDECES, increase index_low by 2!
-    ; this is done so that we can move to the next megatile
-    LDY index_low
-    INY
-    INY
-    STY index_low
+    ; Finished with all INDECES, decreasing index_low by 2!
+    ; this is done so that we can move to the prev megatile
+    LDA index_low
+    CLC
+    SBC #$020
+    STA index_low
+
+    ; Shift our curr_byte, as shown in the `MEGA_NAMETABLE` sheet.
+    LDA curr_byte
+    LSR A
+    LSR A
+    STA curr_byte
 
     ; Loop Condition, if X != 4, Loop
     INX                 ; X += 1
