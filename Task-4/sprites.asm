@@ -92,13 +92,14 @@ forever:
   ADC MXb
   ADC MYb
   STA index
+  LDA $2002
   LDA $20
   STA PPUADDR
   LDA $00
   STA PPUADDR
 
   LoadBackground:
-    
+
 
 
 
