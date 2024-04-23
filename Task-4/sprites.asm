@@ -58,10 +58,29 @@ vblankwait:       ; wait for another vblank before continuing
 
   JSR load_M_segment
 
+  ; Increase m_index ++
+  LDX m_index
+  INX
+  STX m_index
+
+  ; Check if m_index >= 60
+  CPX #$3C
+  BEQ reset_mindex
+
   LDA #%10010000  ; turn on NMIs, sprites use first pattern table
   STA PPUCTRL
   LDA #%10011110  ; turn on screen
   STA PPUMASK
+
+  JMP end_vblank
+
+  reset_mindex:
+    LDX #$00
+    STX m_index
+
+
+  end_vblank:
+
 
 forever:
   JMP forever
@@ -181,37 +200,6 @@ forever:
   JSR draw_mega_index
 
 
-  Load_Background:
-    LDA #$20
-    ADC index_high
-    STA PPUADDR
-    LDA #$00
-    ADC index_low
-    STA PPUADDR
-    ;LDY stage1left,X
-  Calculate_tile:
-    LDA stage1left,X
-    AND #$03
-    CMP #$01
-    BEQ Load_Stone ; We encountered a stone tile
-    CMP #$10
-    BEQ Load_Brick
-    ASL A
-    ASL A
-
-  Load_Bush:
-    ; logic to draw a bush
-    ; we need to update index to go to the next megatile
-
-  Load_Stone:
-    ; logic to draw a stone block
-    ; we need to update index to go to the next megatile
-
-  Load_Brick:
-    ; logic to draw a brick block
-    ; we need to update index to go to the next megatile
-
-  ; restore registers and return
   PLA 
   TYA
   PLA
@@ -446,3 +434,8 @@ masks:
 
 .segment "CHR"
 .incbin "graphics.chr"
+
+
+; ca65 src/backgrounds.asm
+; ca65 src/scrolling.asm
+; ld65 src/backgrounds.o src/scrolling.o -C nes.cfg -o scrolling.nes
