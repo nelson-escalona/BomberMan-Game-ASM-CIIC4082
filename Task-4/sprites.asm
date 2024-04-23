@@ -9,6 +9,10 @@ index: .res 1
 index_high: .res 1
 index_low: .res 1
 current_byte: .res 1
+
+; For Iter_whatever i did
+current_mask: .res 1
+current_mega: .res 1
 .exportzp m_index
 
 .segment "CODE"
@@ -72,6 +76,13 @@ forever:
   TYA
   PHA
 
+
+  ; Here, we'll be getting the (X,Y) for the Mega Index
+  ; from our m_index. This is what was done in the video
+  ; in which the professor provides the following steps:
+  ;       MYb = Mindex/4 (or Mindex>>2); 
+  ;       MXb = Mindex%4 (or Mindex&&0x03)
+
   LDA m_index ; load the current M index into A
   LSR A       ; first shift right
   LSR A       ; second shift right
@@ -80,34 +91,71 @@ forever:
   AND #$03    ; mask out the first two bits (from right to left)
   STA MXb     ; store A into MXb
 
+
+
+  ; Below, we'll be moving towards the translation
+  ; from MINDEX -> INDEX. To do this, we must first
+  ; perform the following steps:
+  ;     1. Multiply MYb * 64
+  ;     2. Multiply MXb * 8
+  ;     3. Sum the two to get INDEX.
+
+  ; 1. Multiply MYb (Mega Index-Y) 2^6 = 64 times.
   LDA MYb
   ASL A
   ASL A
   ASL A
   ASL A
   ASL A
-  ASL A ; 6 shifts left makes this = to A * 64
+  ASL A 
   STA MYb
+  ; Multiplication is done and we store it back to MYb
+
+
+  ; 2. Repeat a similar process for MXb, only 2^3 times.
   LDA MXb
   ASL A
   ASL A
-  ASL A ; 3 shifts left makes this = to A * 8
+  ASL A 
   STA MXb
+  ; Done, stored back to MXb
+
+  ; 3. Sum both of the previous values to acquire `index`.
   LDA $00
   ADC MXb
   ADC MYb
   STA index
 
+
+
+  ; Here we'll be doing the new operation to be able to
+  ; store the low and high bytes to get the `INDEX`.
+  ; The steps for these are as follows:
+  ;
+  ;     1. Highbit = (MYb >> 2) AND 00000011;
+  ;            - Shift MYb twice to the right
+  ;            - Mask MYb AND $03 or %00000011
+  ;
+  ;     2. Lowbit = (MXB << 3) + (MYb << 6)
+  ;            - Shift MXb 3 times to the left
+  ;            - Shift MYb 6 times to the left
+  ;            - Add the two and STA Lowbit.
+  
+  ; 1. Shift MYb twice and Mask it
   LDA MYb
   LSR A
   LSR A
   AND #$03
   STA index_high
+
+  ; 2.1 Shift MXb 3 times left.
   LDA MXb
   ASL A
   ASL A
   ASL A
   STA MXb
+
+  ; 2.2 Shift MYb  6 times left.
   LDA MYb
   ASL A
   ASL A
@@ -115,10 +163,23 @@ forever:
   ASL A
   ASL A
   ASL A
+
+  ; 2.3 Add the two and store it.
   ADC MXb
   STA index_low
   LDA #$00
   LDX m_index
+
+  ; Where are we at right now? Well we currently have our
+  ; INDEX for the Top-Left of the MINDEX. With this, we can
+  ; proceed to commence drawing the Mega Tiles inside this
+  ; MINDEX. 
+  ;
+  ; Thus, we will need to commence writing to PPUDATA, we'll
+  ; JSR into a new Subroutine that should write onto all the
+  ; the tiles within this Mega Index!
+  JSR draw_mega_index
+
 
   Load_Background:
     LDA #$20
@@ -151,6 +212,157 @@ forever:
     ; we need to update index to go to the next megatile
 
   ; restore registers and return
+  PLA 
+  TYA
+  PLA
+  TAX 
+  PLA 
+  PLP 
+  RTS 
+.endproc
+
+
+.proc draw_mega_index
+  PHP
+  PHA
+  TXA
+  PHA
+  TYA
+  PHA
+
+  ; At this point, we're inside the Top-Left till/index
+  ; in our Mega Index. Our objectives are the following:
+  ;
+  ;     1. Iterate through each mega tile in the MINDEX
+  ;        it should be four (4) of them! 
+  ;
+  ;         - Get our byte from the nametable. This can be
+  ;           done by using the MINDEX as an offset for the
+  ;           nametable e.g. ```LDA nametable, MINDEX```
+  ;
+  ;         - Draw to: (INDEX, INDEX+1, INDEX+32, INDEX+33)
+  ;           effectively drawing to all 4 tiles in that space
+  ;           and creating a Mega Tile. We can use masking to
+  ;           get the byte that actually goes to each of these.
+  ;
+  ;         - Once we draw to the entirety of that Megatile,
+  ;           we go onto the next by doing INDEX += 2. This
+  ;           gives us the Top Left index of the next Mega Tile.
+  ;
+  ;
+  ;    2. Repeat that process four (4) times and end subroutine.
+  
+
+  ; Use `X` Register as our Counter, Initialize at #$00
+  LDX #$00
+
+
+  ; 1.1 Get byte from nametable and store it.
+  ; NOTE : Might have to load m_index to Y so that
+  ;        we can actually use it as an offset.
+  LDY m_index
+  LDA stage1left, Y
+  STA current_byte
+
+  Iter_megatile:
+
+    ; The way we decide which background tile will our nametable
+    ; use is by masking the byte we get from the nametable, let me
+    ; explain...
+    ;
+    ; Supposed we get %00011110, then we'll have:
+    ;
+    ;   MEGATILE 1  : 00          MEGATILE 2  : 01
+    ;   MEGATILE 3  : 11          MEGATILE 4  : 10
+    ;
+    ; Cool, then let's write our megatiles.
+    ;
+    ; NOTE : we write INDEX to PPUADDRESS, and we define PPUADDRESS
+    ;        by writing index_high and then index_low to it. So when 
+    ;        increasing the index, just increase index_low + 2.
+    ;
+    ; NOTE : We'll write the same shit to each index, because the indices
+    ;        are just tiles, not Megatiles, they're all composed of the
+    ;        same tile that would make up a Megatile
+
+
+
+
+    ; PREP : Get the mask we'll use for this megatile, using X
+    ;        as our offset for each iteration.
+    LDA masks, X
+    STA current_mask
+
+    ; Mask the Current byte so that we
+    ; can get the by for this Megatile
+    LDA current_byte
+    AND current_mask
+
+    ; Now we have the current megatile!
+    STA current_mega
+
+
+    ; Write INDEX+0 to PPUADDRESS
+    LDY index_high
+    STY PPUADDR
+    LDY index_low
+    STY PPUADDR
+    ; Write Data to INDEX+0
+    LDY current_mega
+    STY PPUDATA
+
+
+    ; Repeat for INDEX+1
+    LDY index_high
+    STY PPUADDR
+    LDY index_low   ; Increase index_low
+    INY             ; and store in low bit
+    STY PPUADDR
+    ; Write Data to INDEX+1
+    LDY current_mega
+    STY PPUDATA
+
+
+    ; Repeat for INDEX+32
+    LDY index_high
+    STY PPUADDR
+    LDA index_low
+    CLC
+    ADC #$20      ; Add 32! 
+    STA PPUADDR   ; store it in low bit
+    ; Write Data to INDEX+32
+    LDY current_mega
+    STY PPUDATA
+
+
+    ; Repeat for INDEX+33
+    LDY index_high
+    STY PPUADDR
+    LDA index_low
+    CLC
+    ADC #$21      ; Add 33! 
+    STA PPUADDR   ; store it in low bit
+    ; Write Data to INDEX+33
+    LDY current_mega
+    STY PPUDATA
+
+
+
+
+
+    ; Finished with all INDECES, increase index_low by 2!
+    ; this is done so that we can move to the next megatile
+    LDY index_low
+    INY
+    INY
+    STY index_low
+
+    ; Loop Condition, if X != 4, Loop
+    INX                 ; X += 1
+    CPX #$04            ; I forgot how the BEQ worke
+    BNE Iter_megatile   ; if X != 4, keep loopin!
+
+
   PLA 
   TYA
   PLA
@@ -222,6 +434,9 @@ stage1left:
   .byte %01111111,	%11111100, %10111010,	%10100010
   .byte %00111111,	%11111100, %10111111,	%11110010
   .byte %01010101,	%01010101, %01010101,	%01010101
+
+masks:
+  .byte %11000000, %00110000, %00001100, %00000011
 
 ; sprites:
 ;   .byte $70, $04, $00, $80
