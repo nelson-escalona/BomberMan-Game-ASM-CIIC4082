@@ -6,6 +6,9 @@ m_index: .res 1
 MYb: .res 1
 MXb: .res 1
 index: .res 1
+index_high: .res 1
+index_low: .res 1
+current_byte: .res 1
 .exportzp m_index
 
 .segment "CODE"
@@ -48,6 +51,8 @@ load_palettes:
 vblankwait:       ; wait for another vblank before continuing
   BIT PPUSTATUS
   BPL vblankwait
+
+  JSR load_M_segment
 
   LDA #%10010000  ; turn on NMIs, sprites use first pattern table
   STA PPUCTRL
@@ -92,18 +97,40 @@ forever:
   ADC MXb
   ADC MYb
   STA index
-  LDA $2002
-  LDA $20
-  STA PPUADDR
-  LDA $00
-  STA PPUADDR
 
-  LoadBackground:
+  LDA MYb
+  LSR A
+  LSR A
+  AND #$03
+  STA index_high
+  LDA MXb
+  ASL A
+  ASL A
+  ASL A
+  STA MXb
+  LDA MYb
+  ASL A
+  ASL A
+  ASL A
+  ASL A
+  ASL A
+  ASL A
+  ADC MXb
+  STA index_low
+  LDA #$00
+  LDX #$00
+
+  Load_Background:
+    LDA #$20
+    ADC index_high
+    STA PPUADDR
+    LDA #$00
+    ADC index_low
+    STA PPUADDR
 
 
 
-
-
+    
 
   ; restore registers and return
   PLA 
@@ -113,37 +140,38 @@ forever:
   PLA 
   PLP 
   RTS 
+.endproc
 
-LoadBackground:
-  LDA $2002             ; read PPU status to reset the high/low latch
-  LDA #$20
-  STA $2006             ; write the high byte of $2000 address
-  LDA #$00
-  STA $2006             ; write the low byte of $2000 address
-  LDX #$00              ; start out at 0
+; LoadBackground:
+;   LDA $2002             ; read PPU status to reset the high/low latch
+;   LDA #$20
+;   STA $2006             ; write the high byte of $2000 address
+;   LDA #$00
+;   STA $2006             ; write the low byte of $2000 address
+;   LDX #$00              ; start out at 0
 
-LoadBackgroundLoop:
-  LDA background, x     ; load data from address (background + the value in x)
-  STA $2007             ; write to PPU
-  INX                   ; X = X + 1
-  CPX #$80              ; Compare X to hex $80, decimal 128 - copying 128 bytes
-  BNE LoadBackgroundLoop  ; Branch to LoadBackgroundLoop if compare was Not Equal to zero
-                        ; if compare was equal to 128, keep going down
+; LoadBackgroundLoop:
+;   LDA background, x     ; load data from address (background + the value in x)
+;   STA $2007             ; write to PPU
+;   INX                   ; X = X + 1
+;   CPX #$80              ; Compare X to hex $80, decimal 128 - copying 128 bytes
+;   BNE LoadBackgroundLoop  ; Branch to LoadBackgroundLoop if compare was Not Equal to zero
+;                         ; if compare was equal to 128, keep going down
 
-LoadAttribute:
-  LDA $2002             ; read PPU status to reset the high/low latch
-  LDA #$23
-  STA $2006             ; write the high byte of $23C0 address
-  LDA #$C0
-  STA $2006             ; write the low byte of $23C0 address
-  LDX #$00              ; start out at 0
+; LoadAttribute:
+;   LDA $2002             ; read PPU status to reset the high/low latch
+;   LDA #$23
+;   STA $2006             ; write the high byte of $23C0 address
+;   LDA #$C0
+;   STA $2006             ; write the low byte of $23C0 address
+;   LDX #$00              ; start out at 0
 
-LoadAttributeLoop:
-  LDA attribute, x      ; load data from address (attribute + the value in x)
-  STA $2007             ; write to PPU
-  INX                   ; X = X + 1
-  CPX #$08              ; Compare X to hex $08, decimal 8 - copying 8 bytes
-  BNE LoadAttributeLoop
+; LoadAttributeLoop:
+;   LDA attribute, x      ; load data from address (attribute + the value in x)
+;   STA $2007             ; write to PPU
+;   INX                   ; X = X + 1
+;   CPX #$08              ; Compare X to hex $08, decimal 8 - copying 8 bytes
+;   BNE LoadAttributeLoop
 
 .segment "VECTORS"
 .addr nmi_handler, reset_handler, irq_handler
@@ -159,6 +187,23 @@ palettes:
   .byte $0f, $19, $09, $29
   .byte $0f, $19, $09, $29
   .byte $0f, $19, $09, $29
+
+stage1left:
+  .byte %01010101, %01010101, %01010101, %01010101
+  .byte %01111111, %11111100, %10000000, %00000000
+  .byte %01111011, %11111100, %10001010, %10101010
+  .byte %01111010, %10101000, %10001000, %00000010
+  .byte %01000000,	%00001000, %10111010,	%10100110
+  .byte %01101010,	%10001000, %11111100,	%00101110
+  .byte %01000000,	%00001010, %10101010,	%10101110
+  .byte %01001010,	%10101000, %11111111, %11111110
+  .byte %01000000,	%00001000, %10101010,	%10101110
+  .byte %01101010,	%10001000, %10000000,	%00111110
+  .byte %01111111,	%11111000, %10111010,	%10100010
+  .byte %01111010,	%10101000, %10111000,	%00000010
+  .byte %01111111,	%11111100, %10111010,	%10100010
+  .byte %00111111,	%11111100, %10111111,	%11110010
+  .byte %01010101,	%01010101, %01010101,	%01010101
 
 ; sprites:
 ;   .byte $70, $04, $00, $80
