@@ -2,17 +2,24 @@
 .include "header.inc"
 
 .segment "ZEROPAGE"
+ppu_high: .res 1
+
 m_index: .res 1
 MYb: .res 1
 MXb: .res 1
+
+
 index: .res 1
 index_high: .res 1
 index_low: .res 1
+
+
 current_byte: .res 1
 
 ; For Iter_whatever i did
 current_mask: .res 1
 current_mega: .res 1
+
 .exportzp m_index
 
 .segment "CODE"
@@ -90,41 +97,6 @@ forever:
     LDA m_index
     AND #$03    ; mask out the first two bits (from right to left)
     STA MXb     ; store A into MXb
-
-
-
-    ; Below, we'll be moving towards the translation
-    ; from MINDEX -> INDEX. To do this, we must first
-    ; perform the following steps:
-    ;     1. Multiply MYb * 64
-    ;     2. Multiply MXb * 8
-    ;     3. Sum the two to get INDEX.
-
-    ; 1. Multiply MYb (Mega Index-Y) 2^6 = 64 times.
-    LDA MYb
-    ASL A
-    ASL A
-    ASL A
-    ASL A
-    ASL A
-    ASL A 
-    STA MYb
-    ; Multiplication is done and we store it back to MYb
-
-
-    ; 2. Repeat a similar process for MXb, only 2^3 times.
-    LDA MXb
-    ASL A
-    ASL A
-    ASL A 
-    STA MXb
-    ; Done, stored back to MXb
-
-    ; 3. Sum both of the previous values to acquire `index`.
-    LDA $00
-    ADC MXb
-    ADC MYb
-    STA index
 
 
 
@@ -279,8 +251,10 @@ forever:
 
 
     ; Write INDEX+0 to PPUADDRESS
-    LDY index_high
-    STY PPUADDR
+    LDA index_high
+    CLC 
+    ADC #$20
+    STA PPUADDR   ; Write the high byte
     LDY index_low
     STY PPUADDR
     ; Write Data to INDEX+0
@@ -289,8 +263,10 @@ forever:
 
 
     ; Repeat for INDEX+1
-    LDY index_high
-    STY PPUADDR
+    LDA index_high
+    CLC 
+    ADC #$20
+    STA PPUADDR     ; Write the high byte
     LDY index_low   ; Increase index_low
     INY             ; and store in low bit
     STY PPUADDR
@@ -300,8 +276,10 @@ forever:
 
 
     ; Repeat for INDEX+32
-    LDY index_high
-    STY PPUADDR
+    LDA index_high
+    CLC 
+    ADC #$20
+    STA PPUADDR   ; Write the high byte
     LDA index_low
     CLC
     ADC #$20      ; Add 32! 
@@ -312,8 +290,10 @@ forever:
 
 
     ; Repeat for INDEX+33
-    LDY index_high
-    STY PPUADDR
+    LDA index_high
+    CLC 
+    ADC #$20
+    STA PPUADDR   ; Write the high byte
     LDA index_low
     CLC
     ADC #$21      ; Add 33! 
