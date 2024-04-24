@@ -247,9 +247,13 @@ forever:
 
 
     ; PREP : Mask our curr_byte so we can get the curr_mega
-    LDA current_byte
-    AND #%00000011
-    STA current_mega
+    ; NOTE : We start at the 4th mega tile. CASE: MINDEX = 48
+    LDA current_byte  ; = 01111111
+    AND #%00000011    ; = 00000011
+    STA current_mega  ; = 00000011
+
+    ;;;;;;;;;;; GOOD UP TIL NOW
+
 
     ; Here we'll do some sort of decoding to determine what tile
     ; it should be... for example
@@ -268,7 +272,7 @@ forever:
     ADC #$20
     STA PPUADDR   ; Write the high byte
     LDY index_low
-    STY PPUADDR
+    STY PPUADDR   ; Write the low byte
     ; Write Data to INDEX+0  | Offset = 0
     LDY dec_mega
     STY PPUDATA
@@ -328,7 +332,7 @@ forever:
     ; this is done so that we can move to the prev megatile
     LDA index_low
     CLC
-    SBC #$020
+    SBC #$02
     STA index_low
 
     ; Shift our curr_byte, as shown in the `MEGA_NAMETABLE` sheet.
@@ -342,6 +346,8 @@ forever:
     CPX #$04            ; I forgot how the BEQ worke
     BNE Iter_megatile   ; if X != 4, keep loopin!
 
+  ; Reset X just in case
+  LDX #$00
 
   PLA 
   TYA
@@ -353,10 +359,12 @@ forever:
 .endproc
 
 .proc decode_mega
-  ;Don't know if I want all the 6 things at start and 
-  ;end because I want to make sure the value of the 
-  ;decoded megatile is saved.
-
+  PHP
+  PHA
+  TXA
+  PHA
+  TYA
+  PHA
   ; There are 4 possible codes : 00, 01, 10, 11
 
   LDA current_mega
@@ -395,7 +403,13 @@ forever:
 
   done_dec:
   
-  RTS
+  PLA 
+  TYA
+  PLA
+  TAX 
+  PLA 
+  PLP 
+  RTS 
 .endproc
 
 
