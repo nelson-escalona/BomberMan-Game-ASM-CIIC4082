@@ -20,6 +20,8 @@ current_byte: .res 1
 current_mask: .res 1
 current_mega: .res 1
 
+dec_mega: .res 1
+
 .exportzp m_index
 
 .segment "CODE"
@@ -249,6 +251,16 @@ forever:
     AND #%00000011
     STA current_mega
 
+    ; Here we'll do some sort of decoding to determine what tile
+    ; it should be... for example
+    ;
+    ;   00 = Black BG = Any big number, say $70
+    ;   01 = Stone = $34
+    ;   10 = Brick = $38
+    ;   11 = Bushes = $40
+
+    JSR decode_mega
+
 
     ; Write INDEX+0 to PPUADDRESS
     LDA index_high
@@ -257,8 +269,8 @@ forever:
     STA PPUADDR   ; Write the high byte
     LDY index_low
     STY PPUADDR
-    ; Write Data to INDEX+0
-    LDY current_mega
+    ; Write Data to INDEX+0  | Offset = 0
+    LDY dec_mega
     STY PPUDATA
 
 
@@ -270,9 +282,11 @@ forever:
     LDY index_low   ; Increase index_low
     INY             ; and store in low bit
     STY PPUADDR
-    ; Write Data to INDEX+1
-    LDY current_mega
-    STY PPUDATA
+    ; Write Data to INDEX+1  |  Offset = 1
+    LDA dec_mega
+    CLC
+    ADC #$01
+    STA PPUDATA
 
 
     ; Repeat for INDEX+32
@@ -284,12 +298,14 @@ forever:
     CLC
     ADC #$20      ; Add 32! 
     STA PPUADDR   ; store it in low bit
-    ; Write Data to INDEX+32
-    LDY current_mega
-    STY PPUDATA
+    ; Write Data to INDEX+32  |  Offset = 2
+    LDA dec_mega
+    CLC
+    ADC #$02
+    STA PPUDATA
 
 
-    ; Repeat for INDEX+33
+    ; Repeat for INDEX+33  
     LDA index_high
     CLC 
     ADC #$20
@@ -298,9 +314,11 @@ forever:
     CLC
     ADC #$21      ; Add 33! 
     STA PPUADDR   ; store it in low bit
-    ; Write Data to INDEX+33
-    LDY current_mega
-    STY PPUDATA
+    ; Write Data to INDEX+33  |  Offset = 3
+    LDA dec_mega
+    CLC
+    ADC #$03
+    STA PPUDATA
 
 
 
@@ -334,14 +352,62 @@ forever:
   RTS 
 .endproc
 
+.proc decode_mega
+  ;Don't know if I want all the 6 things at start and 
+  ;end because I want to make sure the value of the 
+  ;decoded megatile is saved.
+
+  ; There are 4 possible codes : 00, 01, 10, 11
+
+  LDA current_mega
+  CMP #%00000000
+  BEQ is_bg
+
+  CMP #%00000001
+  BEQ is_stone
+
+  CMP #%00000010
+  BEQ is_brick
+
+  CMP #%00000011
+  BEQ is_bush
+
+  JMP done_dec
+
+  is_bg:         ; Black BG
+    LDA #$70
+    STA dec_mega
+    JMP done_dec
+
+  is_stone:      ; Stone
+    LDA #$34
+    STA dec_mega
+    JMP done_dec
+
+  is_brick:      ; Brick
+    LDA #$38
+    STA dec_mega
+    JMP done_dec
+
+  is_bush:      ; Bush
+    LDA #$40
+    STA dec_mega
+
+  done_dec:
+  
+  RTS
+.endproc
+
+
+
 .segment "VECTORS"
 .addr nmi_handler, reset_handler, irq_handler
 
 .segment "RODATA"
 palettes:
-  .byte $0f, $10, $10, $10
-  .byte $0f, $10, $10, $10
-  .byte $0f, $11, $11, $11
+  .byte $0f, $00, $10, $30
+  .byte $0f, $05, $16, $37
+  .byte $0f, $0B, $1A, $29
   .byte $0f, $11, $11, $11
 
   .byte $0f ,$11, $21, $01
