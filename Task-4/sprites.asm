@@ -328,7 +328,7 @@ forever:
     ; this is done so that we can move to the prev megatile
     LDA index_low
     CLC
-    SBC #$020
+    SBC #$02
     STA index_low
 
     ; Shift our curr_byte, as shown in the `MEGA_NAMETABLE` sheet.
