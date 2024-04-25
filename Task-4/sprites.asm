@@ -41,27 +41,27 @@ ppuctrl_settings: .res 1
 
   ; update tiles *after* DMA transfer
 
-;   LDA scroll
-;   CMP #$00
-;   BNE set_scroll_positions
+  LDA scroll
+  CMP #$00
+  BNE set_scroll_positions
 
-;   LDA ppuctrl_settings
-;   EOR #%00000010
-;   STA ppuctrl_settings
-;   STA PPUCTRL
-;   LDA #240
-;   STA scroll
+  LDA ppuctrl_settings
+  EOR #%00000001
+  STA ppuctrl_settings
+  STA PPUCTRL
+  LDA #00
+  STA scroll
 
-; set_scroll_positions:
-;   DEC scroll
-;   LDA scroll
-;   STA PPUSCROLL
-;   LDA #$00
-;   STA PPUSCROLL
-
+set_scroll_positions:
+  INC scroll
+  LDA scroll
+  STA PPUSCROLL
   LDA #$00
-  STA $2005
-  STA $2005
+  STA PPUSCROLL
+
+  ; LDA #$00
+  ; STA $2005
+  ; STA $2005
 
   RTI
 .endproc
@@ -70,8 +70,8 @@ ppuctrl_settings: .res 1
 
 .export main
 .proc main
-  ; LDA #239
-  ; STA scroll
+  LDA #239
+  STA scroll
   ; write a palette
   LDX PPUSTATUS
   LDX #$3f
@@ -95,8 +95,8 @@ vblankwait:       ; wait for another vblank before continuing
   ;JSR load_M_segment
   ;JSR load_M_segment2
 
-  LDA #%10010000  ; turn on NMIs, sprites use first pattern table
-  ; STA ppuctrl_settings
+  LDA #%10010001  ; turn on NMIs, sprites use first pattern table
+  STA ppuctrl_settings
   STA PPUCTRL
   LDA #%10011110  ; turn on screen
   STA PPUMASK
@@ -198,7 +198,22 @@ forever:
     BNE LoopMindex
     LDA #$00
     STA m_index
-
+  
+  LoadAttributes:
+    LDA PPUSTATUS
+    LDA #$23
+    STA PPUADDR
+    LDA #$C0
+    STA PPUADDR
+    LDX #$00
+  
+  Load_Attributes_Loop:
+    LDA attribute_stage1_left, X
+    STA PPUDATA
+    INX
+    CPX #$40
+    BNE Load_Attributes_Loop
+  
   PLA 
   TYA
   PLA
@@ -497,6 +512,21 @@ forever:
     BNE LoopMindex
     LDA #$00
     STA m_index
+
+  LoadAttributes2:
+    LDA PPUSTATUS
+    LDA #$27
+    STA PPUADDR
+    LDA #$C0
+    STA PPUADDR
+    LDX #$00
+  
+  Load_Attributes_Loop2:
+    LDA attribute_stage1_right, X
+    STA PPUDATA
+    INX
+    CPX #$40
+    BNE Load_Attributes_Loop2
 
   PLA 
   TYA
@@ -848,11 +878,21 @@ attribute_stage1_left:
   .byte %10000000, %10100000, %10100000, %11100000, %11010000, %11110000, %11110000, %11110000
   .byte %10001000, %01011001, %01011010, %11011110, %11011101, %11010101, %11110101, %01110101
   .byte %01001100, %01011111, %11011111, %11011101, %10101001, %11100101, %01110101, %01100110
-  .byte %11001100, %01011111, %01011111, %11010101, %10101001, %11100101, %01110101, %01100110
-  .byte %11001100, %01010000, %01010000, %00010101, %10100101, %10100101, %10100101, %01100110
-  .byte %01000000, %01010000, %00010000, %00010001, %00010101, %00000101, %10000101, %01100110
+  .byte %11001100, %01011111, %01011111, %11010101, %10100101, %10100101, %10100101, %01100110
+  .byte %01001100, %01010000, %01010000, %00010101, %10010101, %10100101, %10100101, %01100110
   .byte %10001000, %01011010, %01011010, %00010001, %10011001, %00010101, %00000101, %01000100
   .byte %10001000, %10101010, %10101010, %00100010, %10011001, %10100101, %10100101, %01000100
+  .byte %00000000, %00000000, %00000000, %00000000, %00000000, %00000000, %00000000, %00000000
+
+attribute_stage1_right:
+  .byte %00000000, %01000000, %10100000, %01100000, %01000000, %01010000, %01010000, %00010000
+  .byte %01000100, %01000100, %01011010, %01000110, %00010000, %01010000, %01010000, %00000000
+  .byte %01000100, %01010000, %01010000, %01010100, %10101010, %01010001, %01010000, %00010000
+  .byte %01000100, %01000100, %01000000, %01000100, %10011010, %01011010, %10011010, %00100010
+  .byte %01000100, %01000100, %01000100, %01011000, %01011010, %01011010, %10011001, %00100010
+  .byte %01000100, %10100110, %10100110, %01000000, %01010000, %00010000, %10011001, %00100010
+  .byte %00000100, %00000101, %00000101, %01000100, %10101010, %10011010, %10100101, %00100001
+  .byte %00000000, %00000000, %00000000, %00000000, %00000000, %00000000, %00000000, %00000000
 
 .segment "CHR"
 .incbin "graphics.chr"
