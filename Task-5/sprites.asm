@@ -159,58 +159,58 @@ forever:
   STX sprite  ; Store it in sprite :)
   JMP end_updt
 
-check_right:
-  LDA pad1
-  AND #BTN_RIGHT
-  BEQ check_up
+  check_right:
+    LDA pad1
+    AND #BTN_RIGHT
+    BEQ check_up
 
 
-  INC player_x
-  LDX #$10        ; First Tile Looking Right       
-  STX sprite  ; Yup, we store it 
-  JMP end_updt
+    INC player_x
+    LDX #$10        ; First Tile Looking Right       
+    STX sprite  ; Yup, we store it 
+    JMP end_updt
 
-check_up:
-  LDA pad1
-  AND #BTN_UP
-  BEQ check_down
-
-
-  JSR get_top_left
+  check_up:
+    LDA pad1
+    AND #BTN_UP
+    BEQ check_down
 
 
-  LDX #$04        ; First Tile Looking Up       
-  STX sprite  ; Yup, we store it here too
-  JMP end_updt
-
-check_down:
-  LDA pad1
-  AND #BTN_DOWN
-  BEQ done_checking
+    JSR get_top_left
 
 
-  INC player_y
-  LDX #$1C        ; First Tile Looking Down       
-  STX sprite  ; Yup, last one.
-  JMP end_updt
+    LDX #$04        ; First Tile Looking Up       
+    STX sprite  ; Yup, we store it here too
+    JMP end_updt
+
+  check_down:
+    LDA pad1
+    AND #BTN_DOWN
+    BEQ done_checking
 
 
-; This label indicates there was no button pressed, for which we will
-; just reset the offset and the tick! Also set `animation` to #$00
-done_checking:
-  LDA #$00
-  STA offset
-  STA tick
-  STA animation
+    INC player_y
+    LDX #$1C        ; First Tile Looking Down       
+    STX sprite  ; Yup, last one.
+    JMP end_updt
 
-end_updt:
-  PLA ; Done with updates, restore registers
-  TAY ; and return to where we called this
-  PLA
-  TAX
-  PLA
-  PLP
-  RTS
+
+  ; This label indicates there was no button pressed, for which we will
+  ; just reset the offset and the tick! Also set `animation` to #$00
+  done_checking:
+    LDA #$00
+    STA offset
+    STA tick
+    STA animation
+
+  end_updt:
+    PLA ; Done with updates, restore registers
+    TAY ; and return to where we called this
+    PLA
+    TAX
+    PLA
+    PLP
+    RTS
 .endproc
 
 .proc draw_player

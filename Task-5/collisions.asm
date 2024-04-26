@@ -42,17 +42,26 @@ masked_tile:    .res 1
 
     ; First, divide X by // 64
     LDA player_x
-    LSR 6
+    LSR A
+    LSR A
+    LSR A
+    LSR A
+    LSR A
+    LSR A
     STA top_left_x
 
     ; Next, divide Y // 16
     LDA player_y
-    LSR 4
+    LSR A
+    LSR A
+    LSR A
+    LSR A
     STA top_left_y
 
     ; Get the Mindex, which is Y*4 + X
     LDA top_left_y  ; Load Y to accumulator
-    ASL 2           ; Multiply Y by 8 (shift left by 3)
+    ASL A           ; Multiply Y by 8 (shift left by 3)
+    ASL A
     STA top_left_y
     
 
@@ -64,7 +73,10 @@ masked_tile:    .res 1
 
     ; Now do X//16 % 4 to get megatile offset (0...3)
     LDA player_x
-    LSR 4
+    LSR A
+    LSR A
+    LSR A
+    LSR A
     AND #$04
     STA top_left_index
 
