@@ -74,6 +74,8 @@ sprite:           .res 2
 ; :::::::::::::::::::::::::::
 .import get_top_left
 .import get_top_right
+.import get_bot_left
+
 .import read_controller1
 
 
@@ -157,7 +159,10 @@ forever:
   BEQ check_right ; If result is zero, left not pressed
 
 
-  DEC player_x  ; If the branch is not taken, move player left
+
+  JSR get_bot_left
+  ; DEC player_x  ; Let subroutine take care of ti
+
   LDX #$28        ; This is the first tile that looks left
   STX sprite  ; Store it in sprite :)
   JMP end_updt
@@ -168,7 +173,7 @@ check_right:
   BEQ check_up
 
 
-  JSR get_top_right ; tell the line below to eat dick 😂
+  JSR get_top_right ; use the subroutine instead
   ; INC player_x    ; nope lil bro, leave that to the subroutine
 
 

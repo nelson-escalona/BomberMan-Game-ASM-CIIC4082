@@ -300,20 +300,27 @@ masked_tile:    .res 1
   RTS
 .endproc
 
+
+
+
 .export get_bot_left
 .proc get_bot_left
 
+    ; Going to use it for left-side collisions
+    ; for such, we will be decreasing X-1
+    DEC player_x
 
-
-    ; We have to increase player_y by 16 
-    ; since we're checking the bot left ¯\_(ツ)_/¯
+    ; We have to increase player_y by 15 
+    ; since we're checking the bottom left ¯\_(ツ)_/¯
+    ; NOTE: 15 so that we have some space 
+    ; to pass, like we did for TL
     LDA player_y
     CLC
-    ADC #$10        ; Add 16!
+    ADC #$0F        ; Add 16!
     STA temp_y
 
     ; Now, divide X by // 64
-    LDA temp_x
+    LDA player_x
     LSR A
     LSR A
     LSR A
@@ -323,7 +330,7 @@ masked_tile:    .res 1
     STA bot_left_x
 
     ; Next, divide Y // 16
-    LDA player_y
+    LDA temp_y
     LSR A
     LSR A
     LSR A
@@ -344,7 +351,7 @@ masked_tile:    .res 1
 
 
     ; Now do X//16 % 3 to get megatile offset (0...3)
-    LDA temp_x
+    LDA player_x
     LSR A
     LSR A
     LSR A
@@ -397,7 +404,8 @@ masked_tile:    .res 1
         ; set up the TL collision to #$01
         LDA #$01
         STA bot_left_col
-        DEC player_x
+        INC player_x
+
         JMP end_BL
 
     no_col_BL:
