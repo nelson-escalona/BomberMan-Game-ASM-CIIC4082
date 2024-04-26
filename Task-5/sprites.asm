@@ -21,9 +21,21 @@ top_right_index:  .res 1
 bot_left_index:   .res 1
 bot_right_index:  .res 1
 
+top_left_mindex:   .res 1
+top_right_mindex:  .res 1
+bot_left_mindex:   .res 1
+bot_right_mindex:  .res 1
+
+top_left_col:   .res 1
+top_right_col:  .res 1
+bot_left_col:   .res 1
+bot_right_col:  .res 1
+
 .exportzp top_left_y, top_left_x, top_right_y, top_right_x
 .exportzp bot_left_y, bot_left_x, bot_right_y, bot_right_x
 .exportzp top_left_index, top_right_index, bot_left_index, bot_right_index
+.exportzp top_left_mindex, top_right_mindex, bot_left_mindex, bot_right_mindex
+.exportzp top_left_col, top_right_col, bot_left_col, bot_right_col
 
 ; ZERO PAGE FOR TASK-4
 ppu_high:         .res 1
@@ -56,7 +68,12 @@ sprite:           .res 2
   RTI
 .endproc
 
+; ::::::: IMPORT FUNCTIONS:::
+; :::::::::::::::::::::::::::
+.import get_top_left
 .import read_controller1
+
+
 .proc nmi_handler
   LDA #$00
   STA OAMADDR
@@ -159,7 +176,9 @@ check_up:
   BEQ check_down
 
 
-  DEC player_y
+  JSR get_top_left
+
+
   LDX #$04        ; First Tile Looking Up       
   STX sprite  ; Yup, we store it here too
   JMP end_updt
@@ -1105,4 +1124,6 @@ attribute_stage1_left:
 ; ld65 src/backgrounds.o src/scrolling.o -C nes.cfg -o scrolling.nes
 
 
-; ld65 Task-5/sprites.o Task-5/reset.o Task-5/controllers.o -C nes.cfg -o Task-5/task-5.nes
+;ld65 Task-5/sprites.o Task-5/reset.o Task-5/controllers.o Task-5/collisions.o -C nes.cfg -o Task-5/task-5.nes
+
+.export stage1left
