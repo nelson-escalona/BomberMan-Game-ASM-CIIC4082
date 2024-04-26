@@ -5,7 +5,6 @@
 col_megatile:   .res 1
 col_mindex:     .res 1
 col_index:      .res 1
-temp_byte:      .res 1
 temp_mask:      .res 1
 temp_check:     .res 1
 masked_byte:    .res 1
@@ -13,7 +12,7 @@ masked_tile:    .res 1
 
 
 ; Import the zero page stuff for collision detection, player_y and player_z
-.importzp player_x, player_y
+.importzp player_x, player_y, temp_byte
 .importzp top_left_y, top_left_x, top_right_y, top_right_x
 .importzp bot_left_y, bot_left_x, bot_right_y, bot_right_x
 .importzp top_left_index, top_right_index, bot_left_index, bot_right_index
@@ -29,7 +28,7 @@ masked_tile:    .res 1
 ;   ::::::::refer to the document for this on the procedure
 ;                      ¯\_(ツ)_/¯ 
 ;   doc: https://docs.google.com/document/d/182yE6WjFQP4i3Bxazva5xEl3J7vwbtTJ5VUnQCnq8XY/edit?usp=sharing
-.import stage1left
+.import stage1leftfr
 .export get_top_left
 .proc get_top_left
 
@@ -77,8 +76,11 @@ masked_tile:    .res 1
     LSR A
     LSR A
     LSR A
-    AND #$04
-    STA top_left_index
+    STA top_left_index      ; Store X//16 
+
+    LDA top_left_index      ; Load X//16
+    AND #$03                ; Apply % 4
+    STA top_left_index      ; Save it
 
     ; Good, currently we have the following:
     ;       top_left_x      : X // 64
@@ -91,7 +93,7 @@ masked_tile:    .res 1
     ; a collision or not!
 
     LDY top_left_mindex
-    LDA stage1left, Y
+    LDA stage1leftfr, Y
     STA temp_byte
 
     ; ::::::::::::::::::::::::::::::::::::::::::::

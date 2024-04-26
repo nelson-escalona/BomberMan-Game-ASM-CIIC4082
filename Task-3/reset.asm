@@ -33,9 +33,9 @@ clear_oam:
 	BNE clear_oam
 
 	; initialize zero-page values
-	LDA #$80
+	LDA #$00
 	STA player_x
-	LDA #$a0
+	LDA #$00
 	STA player_y
 
   LDA #$04

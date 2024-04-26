@@ -31,6 +31,8 @@ top_right_col:  .res 1
 bot_left_col:   .res 1
 bot_right_col:  .res 1
 
+temp_byte:      .res 1
+.exportzp temp_byte
 .exportzp top_left_y, top_left_x, top_right_y, top_right_x
 .exportzp bot_left_y, bot_left_x, bot_right_y, bot_right_x
 .exportzp top_left_index, top_right_index, bot_left_index, bot_right_index
@@ -159,58 +161,58 @@ forever:
   STX sprite  ; Store it in sprite :)
   JMP end_updt
 
-  check_right:
-    LDA pad1
-    AND #BTN_RIGHT
-    BEQ check_up
+check_right:
+  LDA pad1
+  AND #BTN_RIGHT
+  BEQ check_up
 
 
-    INC player_x
-    LDX #$10        ; First Tile Looking Right       
-    STX sprite  ; Yup, we store it 
-    JMP end_updt
+  INC player_x
+  LDX #$10        ; First Tile Looking Right       
+  STX sprite  ; Yup, we store it 
+  JMP end_updt
 
-  check_up:
-    LDA pad1
-    AND #BTN_UP
-    BEQ check_down
-
-
-    JSR get_top_left
+check_up:
+  LDA pad1
+  AND #BTN_UP
+  BEQ check_down
 
 
-    LDX #$04        ; First Tile Looking Up       
-    STX sprite  ; Yup, we store it here too
-    JMP end_updt
-
-  check_down:
-    LDA pad1
-    AND #BTN_DOWN
-    BEQ done_checking
+  JSR get_top_left
 
 
-    INC player_y
-    LDX #$1C        ; First Tile Looking Down       
-    STX sprite  ; Yup, last one.
-    JMP end_updt
+  LDX #$04        ; First Tile Looking Up       
+  STX sprite  ; Yup, we store it here too
+  JMP end_updt
+
+check_down:
+  LDA pad1
+  AND #BTN_DOWN
+  BEQ done_checking
 
 
-  ; This label indicates there was no button pressed, for which we will
-  ; just reset the offset and the tick! Also set `animation` to #$00
-  done_checking:
-    LDA #$00
-    STA offset
-    STA tick
-    STA animation
+  INC player_y
+  LDX #$1C        ; First Tile Looking Down       
+  STX sprite  ; Yup, last one.
+  JMP end_updt
 
-  end_updt:
-    PLA ; Done with updates, restore registers
-    TAY ; and return to where we called this
-    PLA
-    TAX
-    PLA
-    PLP
-    RTS
+
+; This label indicates there was no button pressed, for which we will
+; just reset the offset and the tick! Also set `animation` to #$00
+done_checking:
+  LDA #$00
+  STA offset
+  STA tick
+  STA animation
+
+end_updt:
+  PLA ; Done with updates, restore registers
+  TAY ; and return to where we called this
+  PLA
+  TAX
+  PLA
+  PLP
+  RTS
 .endproc
 
 .proc draw_player
@@ -1051,21 +1053,24 @@ stage1left:
   .byte %11111101, %00111111, %10101110, %10001010
   .byte %11111100, %00111111, %11111110, %10001111
   .byte %01010101, %01010101, %01010101, %01010101
-  ; This is the actual map
-  ; .byte %01111111, %11111100, %10000000, %00000000
-  ; .byte %01111011, %11111100, %10001010, %10101010
-  ; .byte %01111010, %10101000, %10001000, %00000010
-  ; .byte %01000000,	%00001000, %10111010,	%10100110
-  ; .byte %01101010,	%10001000, %11111100,	%00101110
-  ; .byte %01000000,	%00001010, %10101010,	%10101110
-  ; .byte %01001010,	%10101000, %11111111, %11111110
-  ; .byte %01000000,	%00001000, %10101010,	%10101110
-  ; .byte %01101010,	%10001000, %10000000,	%00111110
-  ; .byte %01111111,	%11111000, %10111010,	%10100010
-  ; .byte %01111010,	%10101000, %10111000,	%00000010
-  ; .byte %01111111,	%11111100, %10111010,	%10100010
-  ; .byte %00111111,	%11111100, %10111111,	%11110010
-  ; .byte %01010101,	%01010101, %01010101,	%01010101
+
+
+stage1leftfr:
+  .byte %01010101, %01010101, %01010101, %01010101
+  .byte %01111111, %11111100, %10000000, %00000000
+  .byte %01111011, %11111100, %10001010, %10101010
+  .byte %01111010, %10101000, %10001000, %00000010
+  .byte %01000000,	%00001000, %10111010,	%10100110
+  .byte %01101010,	%10001000, %11111100,	%00101110
+  .byte %01000000,	%00001010, %10101010,	%10101110
+  .byte %01001010,	%10101000, %11111111, %11111110
+  .byte %01000000,	%00001000, %10101010,	%10101110
+  .byte %01101010,	%10001000, %10000000,	%00111110
+  .byte %01111111,	%11111000, %10111010,	%10100010
+  .byte %01111010,	%10101000, %10111000,	%00000010
+  .byte %01111111,	%11111100, %10111010,	%10100010
+  .byte %00111111,	%11111100, %10111111,	%11110010
+  .byte %01010101,	%01010101, %01010101,	%01010101
 
 stage1right:
   ; This is the flipped/inverted map
@@ -1126,4 +1131,4 @@ attribute_stage1_left:
 
 ;ld65 Task-5/sprites.o Task-5/reset.o Task-5/controllers.o Task-5/collisions.o -C nes.cfg -o Task-5/task-5.nes
 
-.export stage1left
+.export stage1leftfr
