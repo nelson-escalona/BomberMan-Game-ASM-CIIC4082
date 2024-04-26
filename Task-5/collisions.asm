@@ -42,8 +42,18 @@ masked_tile:    .res 1
     ; so it's best to remove it later
     DEC player_y
 
-    ; First, divide X by // 64
+    ; Increase X by just 1 or 2 so that we can have 
+    ; some space to pass by, causing the subroutine
+    ; to detect one megatile to the left, and not the
+    ; one to our left which would impede passing
     LDA player_x
+    CLC
+    ADC #$02
+    STA temp_x
+
+
+    ; First, divide X by // 64
+    LDA temp_x
     LSR A
     LSR A
     LSR A
@@ -74,7 +84,7 @@ masked_tile:    .res 1
 
 
     ; Now do X//16 % 4 to get megatile offset (0...3)
-    LDA player_x
+    LDA temp_x
     LSR A
     LSR A
     LSR A
@@ -289,6 +299,119 @@ masked_tile:    .res 1
 
   RTS
 .endproc
+
+.export get_bot_left
+.proc get_bot_left
+
+
+
+    ; We have to increase player_y by 16 
+    ; since we're checking the bot left ¯\_(ツ)_/¯
+    LDA player_y
+    CLC
+    ADC #$10        ; Add 16!
+    STA temp_y
+
+    ; Now, divide X by // 64
+    LDA temp_x
+    LSR A
+    LSR A
+    LSR A
+    LSR A
+    LSR A
+    LSR A
+    STA bot_left_x
+
+    ; Next, divide Y // 16
+    LDA player_y
+    LSR A
+    LSR A
+    LSR A
+    LSR A
+    STA bot_left_y
+
+    ; Get the Mindex, which is Y*4 + X
+    LDA bot_left_y  ; Load Y to accumulator
+    ASL A            ; Multiply Y by 8 (shift left by 3)
+    ASL A
+    STA bot_left_y
+    
+
+    LDA bot_left_y
+    CLC                     ; Clear Carry Flag 
+    ADC bot_left_x         ; Add with 4Y + X
+    STA bot_left_mindex    ; Store result in bot_left_mindex
+
+
+    ; Now do X//16 % 3 to get megatile offset (0...3)
+    LDA temp_x
+    LSR A
+    LSR A
+    LSR A
+    LSR A
+    STA bot_left_index      ; Store X//16 
+
+    LDA bot_left_index      ; Load X//16
+    AND #$03                 ; Mask % 0...3
+    STA bot_left_index      ; Save it
+
+
+    LDY bot_left_mindex
+    LDA stage1leftfr, Y
+    STA temp_byte
+
+
+
+    ; We have the byte with the Mindex, now
+    ; it's time to work with the offset!
+    LDY bot_left_index      ; get the offset
+    LDA masks, Y            ; get mask for offset
+    STA temp_mask
+
+    LDA temp_byte           ; this is our byte, yea.
+    AND temp_mask           ; mask it to 11 00 00 00 (if offset = 0)
+    STA masked_byte         ; save it so we can then 
+
+
+    LDA #%01010101          ; Full of stones
+    AND temp_mask           ; Masked it
+    STA masked_tile         ; save masked stones
+    
+    LDX masked_byte
+    CPX masked_tile         ; compare it to stones
+    BEQ detect_bot_left    ; collision detected
+
+
+    LDA #%10101010          ; Full of BRICKS
+    AND temp_mask           ; Masked it
+    STA masked_tile         ; saved masked BRICKS
+
+    LDX masked_byte
+    CPX masked_tile         ; compare it to BRICKS
+    BEQ detect_bot_left    ; collision detected
+
+    JMP no_col_BL
+
+
+    detect_bot_left:
+        ; set up the TL collision to #$01
+        LDA #$01
+        STA bot_left_col
+        DEC player_x
+        JMP end_BL
+
+    no_col_BL:
+        ; set up the TL collision to #$00
+        LDA #$00
+        STA bot_left_col
+
+
+    end_BL:
+
+
+  RTS
+.endproc
+
 
 .segment "RODATA"
 masks:
