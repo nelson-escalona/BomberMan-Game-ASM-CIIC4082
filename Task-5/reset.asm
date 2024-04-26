@@ -37,7 +37,7 @@ clear_oam:
   LDA #$00
   STA m_index
 
-	LDA #$10
+	LDA #$FF
 	STA player_x
 	LDA #$08
 	STA player_y

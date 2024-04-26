@@ -3,6 +3,28 @@
 
 .segment "ZEROPAGE"
 
+; ZERO PAGE FOR TASK-5
+top_left_y:       .res 1
+top_left_x:       .res 1
+
+top_right_y:      .res 1
+top_right_x:      .res 1
+
+bot_left_y:       .res 1
+bot_left_x:       .res 1
+
+bot_right_y:      .res 1
+bot_right_x:      .res 1
+
+top_left_index:   .res 1
+top_right_index:  .res 1
+bot_left_index:   .res 1
+bot_right_index:  .res 1
+
+.exportzp top_left_y, top_left_x, top_right_y, top_right_x
+.exportzp bot_left_y, bot_left_x, bot_right_y, bot_right_x
+.exportzp top_left_index, top_right_index, bot_left_index, bot_right_index
+
 ; ZERO PAGE FOR TASK-4
 ppu_high:         .res 1
 m_index:          .res 1
