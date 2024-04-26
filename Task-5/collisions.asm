@@ -32,36 +32,33 @@ masked_tile:    .res 1
 .import stage1left
 .export get_top_left
 .proc get_top_left
-  PHA
-  TXA
-  PHA
-  PHP
+
 
     ; Decrease player_y. This is just because
     ; we're currently checking for top collisions
     ; but top_left can also be used for left collisions
     ; so it's best to remove it later
-    LDY player_y
-    DEY
-    STY player_y
+    DEC player_y
 
     ; First, divide X by // 64
     LDA player_x
     LSR 6
     STA top_left_x
 
-    ; Next, divide Y // 32
+    ; Next, divide Y // 16
     LDA player_y
-    LSR 5
+    LSR 4
     STA top_left_y
 
-    ; Get the Mindex, which is Y*8 + X
+    ; Get the Mindex, which is Y*4 + X
     LDA top_left_y  ; Load Y to accumulator
-    ASL 3           ; Multiply Y by 8 (shift left by 3)
+    ASL 2           ; Multiply Y by 8 (shift left by 3)
+    STA top_left_y
+    
 
-
+    LDA top_left_y
     CLC             ; Clear Carry Flag 
-    ADC top_left_x  ; Add with carry
+    ADC top_left_x  ; Add with 4Y + X
     STA top_left_mindex ; Store result in top_left_mindex
 
 
@@ -145,10 +142,7 @@ masked_tile:    .res 1
         LDA #$01
         STA top_left_col
 
-        LDX player_y
-        INX
-        STX player_y
-
+        INC player_y
         JMP end_tl
 
     no_col_tl:
@@ -159,10 +153,7 @@ masked_tile:    .res 1
 
     end_tl:
 
-  PLP
-  PLA
-  TAX
-  PLA
+
   RTS
 .endproc
 
