@@ -18,6 +18,7 @@ scroll: .res 1
 ppuctrl_settings: .res 1
 pad1: .res 1
 background_flag: .res 1
+checker: .res 1
 .exportzp m_index, pad1
 
 .segment "CODE"
@@ -69,7 +70,7 @@ set_scroll_positions:
 
 .export main
 .proc main
-  LDA #239
+  LDA #255
   STA scroll
   ; write a palette
   LDX PPUSTATUS
@@ -122,6 +123,7 @@ forever:
   JMP forever
   
   load_stage_2:
+    LDA PPUSTATUS
     LDA #%00000000
     STA PPUCTRL
     STA PPUMASK
@@ -129,10 +131,9 @@ forever:
     JSR load_M_segment_stage2_right
     LDA #$00
     STA background_flag
-    LDA #%10011110
-    STA PPUMASK
-    LDA #%10010001
-    LDA PPUCTRL
+    LDA #$00
+    STA scroll
+    JMP vblankwait
 
   JMP forever
 .endproc
