@@ -59,10 +59,6 @@ set_scroll_positions:
   LDA #$00
   STA PPUSCROLL
 
-  ; LDA #$00
-  ; STA $2005
-  ; STA $2005
-
   RTI
 .endproc
 
@@ -85,29 +81,12 @@ load_palettes:
   CPX #$20
   BNE load_palettes
 
-  ; LDA background_flag
-  ; CMP #$01
-  ; BEQ load_stage_2
-
-  ; load_stage_1:
-  ;   LDA #%10000110
-  ;   STA PPUMASK
-    JSR load_M_segment_stage1_left
-    JSR load_M_segment_stage1_right
-    ;JMP vblankwait
-  
-  ; load_stage_2:
-  ;   LDA #%10000110
-  ;   STA PPUMASK
-  ;   JSR load_M_segment_stage2_left
-  ;   JSR load_M_segment_stage2_right
+  JSR load_M_segment_stage1_left
+  JSR load_M_segment_stage1_right
 
 vblankwait:       ; wait for another vblank before continuing
   BIT PPUSTATUS
   BPL vblankwait
-
-  ;JSR load_M_segment
-  ;JSR load_M_segment2
 
   LDA #%10010001  ; turn on NMIs, sprites use first pattern table
   STA ppuctrl_settings
@@ -290,15 +269,6 @@ forever:
   ; Use `X` Register as our Counter, Initialize at #$00
   LDX #$00
 
-
-  ; PREP: Before getting into the Loop Below, increase index_low
-  ;       by +6 so that it starts at the last Mega Tile and we will
-  ;       
-  ; LDA index_low
-  ; CLC
-  ; ADC #%00000110
-  ; STA index_low
-
   ; 1.1 Get byte from nametable and store it.
   ; NOTE : Might have to load m_index to Y so that
   ;        we can actually use it as an offset.
@@ -334,12 +304,6 @@ forever:
     ; NOTE : We start at the 4th mega tile. CASE: MINDEX = 48
     LDA current_byte  ; = 01111111
     AND #%00000011    ; = 00000011
-    ; LSR A
-    ; LSR A
-    ; LSR A
-    ; LSR A
-    ; LSR A
-    ; LSR A
     STA current_mega  ; = 00000011
 
     ;;;;;;;;;;; GOOD UP TIL NOW
@@ -603,15 +567,6 @@ forever:
   ; Use `X` Register as our Counter, Initialize at #$00
   LDX #$00
 
-
-  ; PREP: Before getting into the Loop Below, increase index_low
-  ;       by +6 so that it starts at the last Mega Tile and we will
-  ;       
-  ; LDA index_low
-  ; CLC
-  ; ADC #%00000110
-  ; STA index_low
-
   ; 1.1 Get byte from nametable and store it.
   ; NOTE : Might have to load m_index to Y so that
   ;        we can actually use it as an offset.
@@ -647,12 +602,6 @@ forever:
     ; NOTE : We start at the 4th mega tile. CASE: MINDEX = 48
     LDA current_byte  ; = 01111111
     AND #%00000011    ; = 00000011
-    ; LSR A
-    ; LSR A
-    ; LSR A
-    ; LSR A
-    ; LSR A
-    ; LSR A
     STA current_mega  ; = 00000011
 
     ;;;;;;;;;;; GOOD UP TIL NOW
@@ -916,15 +865,6 @@ forever:
   ; Use `X` Register as our Counter, Initialize at #$00
   LDX #$00
 
-
-  ; PREP: Before getting into the Loop Below, increase index_low
-  ;       by +6 so that it starts at the last Mega Tile and we will
-  ;       
-  ; LDA index_low
-  ; CLC
-  ; ADC #%00000110
-  ; STA index_low
-
   ; 1.1 Get byte from nametable and store it.
   ; NOTE : Might have to load m_index to Y so that
   ;        we can actually use it as an offset.
@@ -960,12 +900,6 @@ forever:
     ; NOTE : We start at the 4th mega tile. CASE: MINDEX = 48
     LDA current_byte  ; = 01111111
     AND #%00000011    ; = 00000011
-    ; LSR A
-    ; LSR A
-    ; LSR A
-    ; LSR A
-    ; LSR A
-    ; LSR A
     STA current_mega  ; = 00000011
 
     ;;;;;;;;;;; GOOD UP TIL NOW
@@ -1229,15 +1163,6 @@ forever:
   ; Use `X` Register as our Counter, Initialize at #$00
   LDX #$00
 
-
-  ; PREP: Before getting into the Loop Below, increase index_low
-  ;       by +6 so that it starts at the last Mega Tile and we will
-  ;       
-  ; LDA index_low
-  ; CLC
-  ; ADC #%00000110
-  ; STA index_low
-
   ; 1.1 Get byte from nametable and store it.
   ; NOTE : Might have to load m_index to Y so that
   ;        we can actually use it as an offset.
@@ -1273,12 +1198,6 @@ forever:
     ; NOTE : We start at the 4th mega tile. CASE: MINDEX = 48
     LDA current_byte  ; = 01111111
     AND #%00000011    ; = 00000011
-    ; LSR A
-    ; LSR A
-    ; LSR A
-    ; LSR A
-    ; LSR A
-    ; LSR A
     STA current_mega  ; = 00000011
 
     ;;;;;;;;;;; GOOD UP TIL NOW
