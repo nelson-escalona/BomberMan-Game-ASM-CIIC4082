@@ -41,26 +41,18 @@ masked_tile:    .res 1
     ; we're currently checking for top collisions
     ; but top_left can also be used for left collisions
     ; so it's best to remove it later
-    DEC player_y
+    LDY player_y
+    DEY
+    STY player_y
 
     ; First, divide X by // 64
     LDA player_x
-    LSR
-    LSR
-    LSR
-    LSR
-    LSR
-    LSR
+    LSR 6
     STA top_left_x
 
-    ; Repeat for Y
+    ; Next, divide Y // 32
     LDA player_y
-    LSR
-    LSR
-    LSR
-    LSR
-    LSR
-    LSR
+    LSR 5
     STA top_left_y
 
     ; Get the Mindex, which is Y*8 + X
@@ -69,7 +61,7 @@ masked_tile:    .res 1
 
 
     CLC             ; Clear Carry Flag 
-    ADC top_left_x  ; Add with 
+    ADC top_left_x  ; Add with carry
     STA top_left_mindex ; Store result in top_left_mindex
 
 
@@ -93,6 +85,30 @@ masked_tile:    .res 1
     LDA stage1left, Y
     STA temp_byte
 
+    ; ::::::::::::::::::::::::::::::::::::::::::::
+    ;  MANUAL DEBUGGING, GOOD TIL HERE
+    ; ::::::::::::::::::::::::::::::::::::::::::::
+
+
+    ; What is our objective here? First, we should get
+    ; the 2 bits for the megatile in which we're stepping
+    ; in, this can be done with the help of `masks`.
+
+    ; If our Offset = 0, the our mask will be 11 00 00 00
+    ; indicating that we only care about the first megatile
+    ; in which we're stepping on. We already get our entire
+    ; 8-bit word from the 3 lines above, assume we're at
+    ; Mindex 59, we'd get 01010101.
+
+    ; If we mask this value with our mask, we'll get
+    ;   01 00 00 00, which is accurate, because we 
+    ;   only care about the first bit here.
+
+    ; we can then generate a word of stones 01 01 01 01
+    ; and also mask it, giving us 01 00 00 00
+    ; we'd then compare these and check if it collided
+
+
     ; We have the byte with the Mindex, now
     ; it's time to work with the offset!
     LDY top_left_index      ; get the offset
@@ -100,9 +116,9 @@ masked_tile:    .res 1
     STA temp_mask
 
     LDA temp_byte           ; this is our byte, yea.
-    AND temp_mask
+    AND temp_mask           ; mask it to 11 00 00 00 (if offset = 0)
     STA masked_byte         ; save it so we can then 
-                            ; compare it
+
 
     LDA #%01010101          ; Full of stones
     AND temp_mask           ; Masked it
@@ -111,7 +127,6 @@ masked_tile:    .res 1
     LDX masked_byte
     CPX masked_tile         ; compare it to stones
     BEQ detect_top          ; collision detected
-
 
 
     LDA #%10101010          ; Full of BRICKS
@@ -129,7 +144,11 @@ masked_tile:    .res 1
         ; set up the TL collision to #$01
         LDA #$01
         STA top_left_col
-        INC player_y        ; set Y to original position
+
+        LDX player_y
+        INX
+        STX player_y
+
         JMP end_tl
 
     no_col_tl:
