@@ -2,6 +2,8 @@
 
 .segment "ZEROPAGE"
 
+temp_x:         .res 1
+temp_y:         .res 1
 col_megatile:   .res 1
 col_mindex:     .res 1
 col_index:      .res 1
@@ -9,6 +11,7 @@ temp_mask:      .res 1
 temp_check:     .res 1
 masked_byte:    .res 1
 masked_tile:    .res 1
+
 
 
 ; Import the zero page stuff for collision detection, player_y and player_z
@@ -171,6 +174,121 @@ masked_tile:    .res 1
   RTS
 .endproc
 
+
+.export get_top_right
+.proc get_top_right
+
+    ; I'll use this to check right-side collisions
+    ; in that case, we'll increase Player X by one
+    INC player_x
+
+
+    ; First, we have to increase player_x by 16 
+    ; since we're checking the top right ¯\_(ツ)_/¯
+    LDA player_x
+    CLC
+    ADC #$10        ; Add 16!
+    STA temp_x
+
+    ; Now, divide X by // 64
+    LDA temp_x
+    LSR A
+    LSR A
+    LSR A
+    LSR A
+    LSR A
+    LSR A
+    STA top_right_x
+
+    ; Next, divide Y // 16
+    LDA player_y
+    LSR A
+    LSR A
+    LSR A
+    LSR A
+    STA top_right_y
+
+    ; Get the Mindex, which is Y*4 + X
+    LDA top_right_y  ; Load Y to accumulator
+    ASL A            ; Multiply Y by 8 (shift left by 3)
+    ASL A
+    STA top_right_y
+    
+
+    LDA top_right_y
+    CLC                     ; Clear Carry Flag 
+    ADC top_right_x         ; Add with 4Y + X
+    STA top_right_mindex    ; Store result in top_right_mindex
+
+
+    ; Now do X//16 % 3 to get megatile offset (0...3)
+    LDA temp_x
+    LSR A
+    LSR A
+    LSR A
+    LSR A
+    STA top_right_index      ; Store X//16 
+
+    LDA top_right_index      ; Load X//16
+    AND #$03                 ; Mask % 0...3
+    STA top_right_index      ; Save it
+
+
+    LDY top_right_mindex
+    LDA stage1leftfr, Y
+    STA temp_byte
+
+
+
+    ; We have the byte with the Mindex, now
+    ; it's time to work with the offset!
+    LDY top_right_index      ; get the offset
+    LDA masks, Y            ; get mask for offset
+    STA temp_mask
+
+    LDA temp_byte           ; this is our byte, yea.
+    AND temp_mask           ; mask it to 11 00 00 00 (if offset = 0)
+    STA masked_byte         ; save it so we can then 
+
+
+    LDA #%01010101          ; Full of stones
+    AND temp_mask           ; Masked it
+    STA masked_tile         ; save masked stones
+    
+    LDX masked_byte
+    CPX masked_tile         ; compare it to stones
+    BEQ detect_top_right    ; collision detected
+
+
+    LDA #%10101010          ; Full of BRICKS
+    AND temp_mask           ; Masked it
+    STA masked_tile         ; saved masked BRICKS
+
+    LDX masked_byte
+    CPX masked_tile         ; compare it to BRICKS
+    BEQ detect_top_right    ; collision detected
+
+    JMP no_col_tr
+
+
+    detect_top_right:
+        ; set up the TL collision to #$01
+        LDA #$01
+        STA top_right_col
+        DEC player_x
+        JMP end_tr
+
+    no_col_tr:
+        ; set up the TL collision to #$00
+        LDA #$00
+        STA top_right_col
+
+
+    end_tr:
+
+
+  RTS
+.endproc
 
 .segment "RODATA"
 masks:

@@ -73,6 +73,7 @@ sprite:           .res 2
 ; ::::::: IMPORT FUNCTIONS:::
 ; :::::::::::::::::::::::::::
 .import get_top_left
+.import get_top_right
 .import read_controller1
 
 
@@ -167,7 +168,10 @@ check_right:
   BEQ check_up
 
 
-  INC player_x
+  JSR get_top_right ; tell the line below to eat dick 😂
+  ; INC player_x    ; nope lil bro, leave that to the subroutine
+
+
   LDX #$10        ; First Tile Looking Right       
   STX sprite  ; Yup, we store it 
   JMP end_updt
