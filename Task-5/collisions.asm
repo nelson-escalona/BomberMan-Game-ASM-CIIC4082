@@ -420,6 +420,126 @@ masked_tile:    .res 1
   RTS
 .endproc
 
+.export get_bot_right
+.proc get_bot_right
+
+    ; Going to use it for down-side collisions
+    ; for such, we will be INC player
+    INC player_y
+
+    ; Bottom Right Corner has to increase both
+    ; X and Y. I'll increase both by 15.
+    LDA player_y
+    CLC
+    ADC #$0F        ; Add 15!
+    STA temp_y
+
+    LDA player_x
+    CLC
+    ADC #$0F        ; Add 15!
+    STA temp_x
+
+
+    ; Now, divide X by // 64
+    LDA temp_x
+    LSR A
+    LSR A
+    LSR A
+    LSR A
+    LSR A
+    LSR A
+    STA bot_right_x
+
+    ; Next, divide Y // 16
+    LDA temp_y
+    LSR A
+    LSR A
+    LSR A
+    LSR A
+    STA bot_right_y
+
+    ; Get the Mindex, which is Y*4 + X
+    LDA bot_right_y  ; Load Y to accumulator
+    ASL A            ; Multiply Y by 8 (shift left by 3)
+    ASL A
+    STA bot_right_y
+    
+
+    LDA bot_right_y
+    CLC                     ; Clear Carry Flag 
+    ADC bot_right_x         ; Add with 4Y + X
+    STA bot_right_mindex    ; Store result in bot_right_mindex
+
+
+    ; Now do X//16 % 3 to get megatile offset (0...3)
+    LDA temp_x
+    LSR A
+    LSR A
+    LSR A
+    LSR A
+    STA bot_right_index      ; Store X//16 
+
+    LDA bot_right_index      ; Load X//16
+    AND #$03                 ; Mask % 0...3
+    STA bot_right_index      ; Save it
+
+
+    LDY bot_right_mindex
+    LDA stage1leftfr, Y
+    STA temp_byte
+
+
+
+    ; We have the byte with the Mindex, now
+    ; it's time to work with the offset!
+    LDY bot_right_index      ; get the offset
+    LDA masks, Y            ; get mask for offset
+    STA temp_mask
+
+    LDA temp_byte           ; this is our byte, yea.
+    AND temp_mask           ; mask it to 11 00 00 00 (if offset = 0)
+    STA masked_byte         ; save it so we can then 
+
+
+    LDA #%01010101          ; Full of stones
+    AND temp_mask           ; Masked it
+    STA masked_tile         ; save masked stones
+    
+    LDX masked_byte
+    CPX masked_tile         ; compare it to stones
+    BEQ detect_bot_right    ; collision detected
+
+
+    LDA #%10101010          ; Full of BRICKS
+    AND temp_mask           ; Masked it
+    STA masked_tile         ; saved masked BRICKS
+
+    LDX masked_byte
+    CPX masked_tile         ; compare it to BRICKS
+    BEQ detect_bot_right    ; collision detected
+
+    JMP no_col_BR
+
+
+    detect_bot_right:
+        ; set up the TL collision to #$01
+        LDA #$01
+        STA bot_right_col
+        DEC player_y
+
+        JMP end_BR
+
+    no_col_BR:
+        ; set up the TL collision to #$00
+        LDA #$00
+        STA bot_right_col
+
+
+    end_BR:
+
+
+  RTS
+.endproc
 
 .segment "RODATA"
 masks:

@@ -72,11 +72,8 @@ sprite:           .res 2
 
 ; ::::::: IMPORT FUNCTIONS:::
 ; :::::::::::::::::::::::::::
-.import get_top_left
-.import get_top_right
-.import get_bot_left
-
 .import read_controller1
+.import get_top_left , get_top_right, get_bot_left , get_bot_right
 
 
 .proc nmi_handler
@@ -199,8 +196,9 @@ check_down:
   AND #BTN_DOWN
   BEQ done_checking
 
+  JSR get_bot_right
+  ; INC player_y  ; let sr take care
 
-  INC player_y
   LDX #$1C        ; First Tile Looking Down       
   STX sprite  ; Yup, last one.
   JMP end_updt
