@@ -72,7 +72,7 @@ sprite:           .res 2
 
 ; ::::::: IMPORT FUNCTIONS:::
 ; :::::::::::::::::::::::::::
-.import read_controller1
+.import read_controller1, col_up, col_down, col_left, col_right
 .import get_top_left , get_top_right, get_bot_left , get_bot_right
 
 
@@ -157,8 +157,7 @@ forever:
 
 
 
-  JSR get_bot_left
-  ; DEC player_x  ; Let subroutine take care of ti
+  JSR col_left
 
   LDX #$28        ; This is the first tile that looks left
   STX sprite  ; Store it in sprite :)
@@ -170,8 +169,8 @@ check_right:
   BEQ check_up
 
 
-  JSR get_top_right ; use the subroutine instead
-  ; INC player_x    ; nope lil bro, leave that to the subroutine
+  JSR col_right
+ 
 
 
   LDX #$10        ; First Tile Looking Right       
@@ -184,7 +183,7 @@ check_up:
   BEQ check_down
 
 
-  JSR get_top_left
+  JSR col_up
 
 
   LDX #$04        ; First Tile Looking Up       
@@ -196,8 +195,7 @@ check_down:
   AND #BTN_DOWN
   BEQ done_checking
 
-  JSR get_bot_right
-  ; INC player_y  ; let sr take care
+  JSR col_down
 
   LDX #$1C        ; First Tile Looking Down       
   STX sprite  ; Yup, last one.

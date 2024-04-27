@@ -39,7 +39,7 @@ clear_oam:
 
 	LDA #$53
 	STA player_x
-	LDA #$27
+	LDA #$20
 	STA player_y
 
   LDA #$04

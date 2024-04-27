@@ -36,11 +36,6 @@ masked_tile:    .res 1
 .proc get_top_left
 
 
-    ; Decrease player_y. This is just because
-    ; we're currently checking for top collisions
-    ; but top_left can also be used for left collisions
-    ; so it's best to remove it later
-    DEC player_y
 
     ; Increase X by just 1 or 2 so that we can have 
     ; some space to pass by, causing the subroutine
@@ -168,8 +163,6 @@ masked_tile:    .res 1
         ; set up the TL collision to #$01
         LDA #$01
         STA top_left_col
-
-        INC player_y
         JMP end_tl
 
     no_col_tl:
@@ -188,16 +181,11 @@ masked_tile:    .res 1
 .export get_top_right
 .proc get_top_right
 
-    ; I'll use this to check right-side collisions
-    ; in that case, we'll increase Player X by one
-    INC player_x
-
-
-    ; First, we have to increase player_x by 16 
+    ; First, we have to increase player_x by 15
     ; since we're checking the top right ¯\_(ツ)_/¯
     LDA player_x
     CLC
-    ADC #$10        ; Add 16!
+    ADC #$0F        ; Add 15!
     STA temp_x
 
     ; Now, divide X by // 64
@@ -285,7 +273,6 @@ masked_tile:    .res 1
         ; set up the TL collision to #$01
         LDA #$01
         STA top_right_col
-        DEC player_x
         JMP end_tr
 
     no_col_tr:
@@ -305,10 +292,6 @@ masked_tile:    .res 1
 
 .export get_bot_left
 .proc get_bot_left
-
-    ; Going to use it for left-side collisions
-    ; for such, we will be decreasing X-1
-    DEC player_x
 
     ; We have to increase player_y by 15 
     ; since we're checking the bottom left ¯\_(ツ)_/¯
@@ -404,7 +387,6 @@ masked_tile:    .res 1
         ; set up the TL collision to #$01
         LDA #$01
         STA bot_left_col
-        INC player_x
 
         JMP end_BL
 
@@ -423,9 +405,6 @@ masked_tile:    .res 1
 .export get_bot_right
 .proc get_bot_right
 
-    ; Going to use it for down-side collisions
-    ; for such, we will be INC player
-    INC player_y
 
     ; Bottom Right Corner has to increase both
     ; X and Y. I'll increase both by 15.
@@ -525,7 +504,6 @@ masked_tile:    .res 1
         ; set up the TL collision to #$01
         LDA #$01
         STA bot_right_col
-        DEC player_y
 
         JMP end_BR
 
@@ -536,10 +514,175 @@ masked_tile:    .res 1
 
 
     end_BR:
-
-
   RTS
 .endproc
+
+.export col_up
+.proc col_up
+  PHA
+  TXA
+  PHA
+  PHP
+
+    ; To go up, you decrease player_y
+    DEC player_y
+
+    ; Check for collisions on top
+    JSR get_top_left
+    JSR get_top_right
+
+    ; Compare the Left Collision Flag
+    LDX top_left_col
+    CPX #$01
+    BEQ yes_col_up
+
+    ; Compare the Right Collision Flag
+    LDX top_right_col
+    CPX #$01
+    BEQ yes_col_up
+
+
+    ; If we're here, there was no collision, 
+    ; Jump to the end
+    JMP end_col_up
+
+    yes_col_up:
+        INC player_y
+
+    end_col_up:
+
+  PLP
+  PLA
+  TAX
+  PLA
+  RTS
+.endproc
+
+
+.export col_down
+.proc col_down
+  PHA
+  TXA
+  PHA
+  PHP
+
+    ; To go down, you increase player_y
+    INC player_y
+
+    ; Check for collisions on top
+    JSR get_bot_left
+    JSR get_bot_right
+
+    ; Compare the Left Collision Flag
+    LDX bot_left_col
+    CPX #$01
+    BEQ yes_col_down
+
+    ; Compare the Right Collision Flag
+    LDX bot_right_col
+    CPX #$01
+    BEQ yes_col_down
+
+
+    ; If we're here, there was no collision, 
+    ; Jump to the end
+    JMP end_col_down
+
+    yes_col_down:
+        DEC player_y
+
+    end_col_down:
+
+  PLP
+  PLA
+  TAX
+  PLA
+  RTS
+.endproc
+
+.export col_left
+.proc col_left
+  PHA
+  TXA
+  PHA
+  PHP
+
+    ; To go left, you decrease player_x
+    DEC player_x
+
+    ; Check for collisions on top
+    JSR get_top_left
+    JSR get_bot_left
+
+    ; Compare the top Collision Flag
+    LDX bot_left_col
+    CPX #$01
+    BEQ yes_col_left
+
+    ; Compare the bottom Collision Flag
+    LDX top_left_col
+    CPX #$01
+    BEQ yes_col_left
+
+
+    ; If we're here, there was no collision, 
+    ; Jump to the end
+    JMP end_col_left
+
+    yes_col_left:
+        INC player_x
+
+    end_col_left:
+
+  PLP
+  PLA
+  TAX
+  PLA
+  RTS
+.endproc
+
+
+.export col_right
+.proc col_right
+  PHA
+  TXA
+  PHA
+  PHP
+
+    ; To go right, you increase player_x
+    INC player_x
+
+    ; Check for collisions on top
+    JSR get_top_right
+    JSR get_bot_right
+
+    ; Compare the top Collision Flag
+    LDX bot_right_col
+    CPX #$01
+    BEQ yes_col_right
+
+    ; Compare the bottom Collision Flag
+    LDX top_right_col
+    CPX #$01
+    BEQ yes_col_right
+
+
+    ; If we're here, there was no collision, 
+    ; Jump to the end
+    JMP end_col_right
+
+    yes_col_right:
+        DEC player_x
+
+    end_col_right:
+
+  PLP
+  PLA
+  TAX
+  PLA
+  RTS
+.endproc
+
 
 .segment "RODATA"
 masks:
