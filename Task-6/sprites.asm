@@ -114,28 +114,39 @@ timer_counter_2: .res 1
 
   ; update tiles *after* DMA transfer
 
-;   LDA scroll
-;   CMP #$00
-;   BNE set_scroll_positions
+  LDA player_x
+  CMP #$E8
+  BNE no_scroll
 
-;   LDA ppuctrl_settings
-;   EOR #%00000001
-;   STA ppuctrl_settings
-;   STA PPUCTRL
-;   LDA #00
-;   STA scroll
+  LDA scroll
+  CMP #$00
+  ;BNE set_scroll_positions
 
-; set_scroll_positions:
-;   INC scroll
-;   LDA scroll
-;   STA PPUSCROLL
-;   LDA #$00
-;   STA PPUSCROLL
+  LDA ppuctrl_settings
+  EOR #%00000001
+  STA ppuctrl_settings
+  STA PPUCTRL
+  LDA #00
+  STA scroll
 
+set_scroll_positions:
+  INC scroll
+  LDA scroll
+  STA PPUSCROLL
+  LDA #$00
+  STA PPUSCROLL
+  LDA #$10
+  STA player_y
+  LDA #00
+  STA player_x
+
+  no_scroll:
   ; To stop scorlling
   LDA #$00
   STA PPUSCROLL
   STA PPUSCROLL
+
+  end_scroll:
 
   RTI
 .endproc
