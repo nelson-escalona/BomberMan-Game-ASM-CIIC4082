@@ -47,9 +47,9 @@ clear_oam:
   STA number2_tile
   LDA #$78
   STA number2_x
-  LDA #$80
+	LDA #$00
 	STA player_x
-	LDA #$a0
+	LDA #$D0
 	STA player_y
 
   LDA #$04
