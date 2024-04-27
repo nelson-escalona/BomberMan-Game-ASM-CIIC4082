@@ -1,7 +1,8 @@
 .include "constants.inc"
 
 .segment "ZEROPAGE"
-.importzp player_x, player_y, sprite
+
+.importzp m_index, player_x, player_y, sprite
 
 .segment "CODE"
 .import main
@@ -32,14 +33,19 @@ clear_oam:
 	INX
 	BNE clear_oam
 
-	; initialize zero-page values
-	LDA #$00
+	; initialize zero-page values below
+  LDA #$00
+  STA m_index
+
+	LDA #$53
 	STA player_x
-	LDA #$00
+	LDA #$20
 	STA player_y
 
   LDA #$04
   STA sprite
+
+
 
 vblankwait2:
   BIT $2002
